@@ -8,20 +8,21 @@ public class Car : MonoBehaviour
     public Rigidbody rigid;
     public WheelCollider wheel1, wheel2, wheel3, wheel4;
     public float drivespeed, steerspeed;
-    public float driftSteerMultiplier = 1.1f;
+    public float driftSteerMultiplier = 1.1f; // How much to increase steering when drifting
     public float minRearFriction = 0.7f; // Friction at max speed
     public float frontFriction = 1.0f;
     public float maxRearFriction = 1.0f; // Friction at zero speed
     public float maxDriftSpeed = 40f; // Speed at which friction is lowest
-    public float driftTurnThreshold = 0.35f;
+    public float driftTurnThreshold = 0.35f; // Minimum input to consider as turning
     public float driftAssist = 100f;
     float horizontalInput, verticalInput;
-    public float idleDrag = 2f;
-    public float movingDrag = 0.05f;
+    public float idleDrag = 2f; // Linear drag when idle
+    public float movingDrag = 0.05f; // Linear drag when moving
 
     // Input System
     private PlayerInput playerInput;
     private InputAction moveAction;
+    private InputAction unstuckAction;
 
     void Awake()
     {
@@ -29,8 +30,11 @@ public class Car : MonoBehaviour
         if (playerInput != null)
         {
             moveAction = playerInput.actions["Move"];
+            unstuckAction = playerInput.actions.FindAction("Unstuck");
         }
     }
+
+    bool unstuckInProgress = false;
 
     void Update()
     {
@@ -40,7 +44,55 @@ public class Car : MonoBehaviour
             horizontalInput = move.x;
             verticalInput = move.y;
         }
+
+        // Unstuck button: R key or Input System action
+        bool unstuckPressed = false;
+        if (unstuckAction != null)
+        {
+            unstuckPressed = unstuckAction.triggered;
+        }
+        else if (Keyboard.current != null)
+        {
+            unstuckPressed = Keyboard.current.rKey.wasPressedThisFrame;
+        }
+        // Only allow unstuck if car is nearly stopped and not already unstucking
+        if (unstuckPressed && !unstuckInProgress && rigid.linearVelocity.magnitude < 0.1f)
+        {
+            StartCoroutine(SmoothUnstuck());
+        }
     }
+
+    System.Collections.IEnumerator SmoothUnstuck()
+    {
+        unstuckInProgress = true;
+        float duration = 1.0f;
+        float elapsed = 0f;
+        Vector3 startPos = transform.position;
+        Vector3 endPos = startPos + Vector3.up * 1.5f;
+        Quaternion startRot = transform.rotation;
+        Quaternion endRot = Quaternion.Euler(0, transform.eulerAngles.y, 0);
+        rigid.linearVelocity = Vector3.zero;
+        rigid.angularVelocity = Vector3.zero;
+        rigid.isKinematic = true;
+        while (elapsed < duration)
+        {
+            float t = elapsed / duration;
+            transform.position = Vector3.Lerp(startPos, endPos, t);
+            transform.rotation = Quaternion.Slerp(startRot, endRot, t);
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+        transform.position = endPos;
+        transform.rotation = endRot;
+        rigid.isKinematic = false;
+        unstuckInProgress = false;
+    }
+
+    // Self-righting state
+    float flipTimer = 0f;
+    float flipForceRamp = 2.5f; // How quickly the upright force ramps up
+    float maxUprightStrength = 120f; // Max upright force
+    float maxFlipAngularVel = 2.5f; // Clamp angular velocity when flipping
 
     void FixedUpdate()
     {
@@ -84,6 +136,16 @@ public class Car : MonoBehaviour
             float driftDirection = Mathf.Sign(horizontalInput);
             rigid.AddTorque(Vector3.up * driftAssist * driftDirection);
         }
+
+        // Auto-roll: gently roll the car if it's significantly tilted
+        float uprightDot = Vector3.Dot(transform.up, Vector3.up);
+        if (uprightDot < 0.7f) // If more than ~45 degrees from upright
+        {
+            float rollStrength = 60f; // Lower for more natural, higher for faster
+            Vector3 rollAxis = Vector3.Cross(transform.up, Vector3.up).normalized;
+            rigid.AddTorque(rollAxis * rollStrength);
+        }
+        // No timer or clamping, so the car can keep rolling naturally
     }
 
     void SetWheelFriction(WheelCollider wheel, float friction)

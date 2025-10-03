@@ -9,7 +9,7 @@ public class Wheel : MonoBehaviour
     private float currentSteerAngle = 0f;
     public float steerSmoothSpeed = 8f;
 
-    void Update()
+    void LateUpdate()
     {
         // Get suspension position and rotation
         Vector3 pos;

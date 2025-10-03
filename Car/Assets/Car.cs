@@ -16,6 +16,8 @@ public class Car : MonoBehaviour
     public float driftTurnThreshold = 0.35f;
     public float driftAssist = 100f;
     float horizontalInput, verticalInput;
+    public float idleDrag = 2f;
+    public float movingDrag = 0.05f;
 
     // Input System
     private PlayerInput playerInput;
@@ -48,6 +50,16 @@ public class Car : MonoBehaviour
         wheel2.motorTorque = motor;
         wheel3.motorTorque = motor;
         wheel4.motorTorque = motor;
+
+        // Slow down when no input
+        if (Mathf.Abs(verticalInput) < 0.01f)
+        {
+            rigid.linearDamping = idleDrag;
+        }
+        else
+        {
+            rigid.linearDamping = movingDrag;
+        }
 
         // Calculate speed-based rear friction
         float speed = rigid.linearVelocity.magnitude;

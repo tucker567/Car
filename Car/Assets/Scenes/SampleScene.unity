@@ -271,7 +271,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Camera
   target: {fileID: 1434297653}
   offset: {x: 0, y: 5, z: -10}
-  smoothSpeed: 0.125
+  smoothSpeed: 0.03
+  orbitSmoothSpeed: 0.14
+  orbitLag: 0.9
 --- !u!1 &394964294
 GameObject:
   m_ObjectHideFlags: 0
@@ -1171,13 +1173,15 @@ MonoBehaviour:
   wheel4: {fileID: 1683693756}
   drivespeed: 600
   steerspeed: 40
-  driftSteerMultiplier: 1.5
-  rearDriftFriction: 0.7
+  driftSteerMultiplier: 1.1
+  minRearFriction: 0.7
   frontFriction: 1
-  normalRearFriction: 1
-  driftSpeedThreshold: 5
-  driftTurnThreshold: 0.2
-  driftAssist: 200
+  maxRearFriction: 1
+  maxDriftSpeed: 40
+  driftTurnThreshold: 0.35
+  driftAssist: 100
+  idleDrag: 0.75
+  movingDrag: 0.05
 --- !u!114 &1434297655
 MonoBehaviour:
   m_ObjectHideFlags: 0

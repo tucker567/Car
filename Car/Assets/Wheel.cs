@@ -6,12 +6,26 @@ public class Wheel : MonoBehaviour
     public Transform wheelMesh;
     public bool wheelTurn;
 
+    private float currentSteerAngle = 0f;
+    public float steerSmoothSpeed = 8f;
+
     void Update()
     {
+        // Get suspension position and rotation
+        Vector3 pos;
+        Quaternion rot;
+        wheelCollider.GetWorldPose(out pos, out rot);
+        wheelMesh.position = pos;
+        wheelMesh.rotation = rot;
+
+        // For front wheels, smoothly interpolate visual steering
         if (wheelTurn == true)
         {
-            wheelMesh.localEulerAngles = new Vector3(wheelMesh.localEulerAngles.x, wheelCollider.steerAngle - wheelMesh.localEulerAngles.z, wheelMesh.localEulerAngles.z);
+            float targetSteer = wheelCollider.steerAngle;
+            currentSteerAngle = Mathf.LerpAngle(currentSteerAngle, targetSteer, steerSmoothSpeed * Time.deltaTime);
+            Vector3 euler = wheelMesh.localEulerAngles;
+            euler.y = currentSteerAngle;
+            wheelMesh.localEulerAngles = euler;
         }
-        wheelMesh.Rotate(wheelCollider.rpm / 60 * 360 * Time.deltaTime, 0, 0);
     }
 }

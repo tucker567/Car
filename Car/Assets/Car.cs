@@ -88,12 +88,6 @@ public class Car : MonoBehaviour
         unstuckInProgress = false;
     }
 
-    // Self-righting state
-    float flipTimer = 0f;
-    float flipForceRamp = 2.5f; // How quickly the upright force ramps up
-    float maxUprightStrength = 120f; // Max upright force
-    float maxFlipAngularVel = 2.5f; // Clamp angular velocity when flipping
-
     void FixedUpdate()
     {
         float motor = verticalInput * drivespeed;

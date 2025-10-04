@@ -2,20 +2,27 @@ using UnityEngine;
 
 public class DriftMarks : MonoBehaviour
 {
-    public TrailRenderer trailMarks; // Assign 4 TrailRenderers (one for each wheel)
-    public WheelCollider wheelColliders; // Assign 4 WheelColliders (same order as trailMarks)
-    public GameObject Wheel; // Assign the wheel GameObject
+    public TrailRenderer trailMark; // Assign the TrailRenderer for the tire you want
+    public WheelCollider wheelCollider; // Assign the WheelCollider for the same tire
     public float slipThreshold = 0.25f;
+    public bool LeftSide; // True if this is the left tire, false for right tire
 
-    void Update()
-    {
-        WheelHit hit;
-        bool drifting = wheelColliders.GetGroundHit(out hit) && Mathf.Abs(hit.sidewaysSlip) > slipThreshold;
-        trailMarks.emitting = drifting;
+        void Update()
+        {
+            WheelHit hit;
+            bool grounded = wheelCollider.GetGroundHit(out hit);
+            bool drifting = grounded && Mathf.Abs(hit.sidewaysSlip) > slipThreshold;
+            trailMark.emitting = drifting;
 
-        // Move The Object this script is attached to up and down with the wheel
-        Vector3 wheelPosition = transform.position;
-        wheelPosition.y = hit.point.y;
-        transform.position = wheelPosition;
-    }
+            // Move the TrailRenderer to the ground contact point if grounded
+            if (grounded)
+            {
+                // Offset a little above ground to avoid z-fighting
+                Vector3 contactPoint = hit.point + Vector3.up * 0.02f;
+                // Offset x inward under the car depending on side
+                float xOffset = LeftSide ? 0.1f : -0.1f;
+                Vector3 offsetPos = contactPoint + transform.right * xOffset;
+                trailMark.transform.position = new Vector3(offsetPos.x, offsetPos.y, offsetPos.z);
+            }
+        }
 }

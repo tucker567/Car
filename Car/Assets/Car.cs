@@ -2,12 +2,33 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using TMPro;
 
 public class Car : MonoBehaviour
 {
+    [Header("Boost/Heat System")]
+    public float maxHeat = 100f;
+    public float heat = 0f;
+    public float heatGainRate = 40f; // per second while boosting
+    public float heatCoolRate = 20f; // per second while not boosting
+    public float overheatCoolRate = 5f; // per second while overheated
+    public float boostForce = 5000f;
+    public TMP_Text boostText; // Assign in Inspector
+    private bool boosting = false;
+    private bool overheated = false;
+    public float overheatSlowMultiplier = 0.5f; // Car speed when overheated
+
+    [Header("Car Components")]
     public Rigidbody rigid;
     public WheelCollider wheel1, wheel2, wheel3, wheel4;
+
+    [Header("Driving Settings")]
     public float drivespeed, steerspeed;
+    public float idleDrag = 2f; // Linear drag when idle
+    public float movingDrag = 0.05f; // Linear drag when moving
+    public float centerOfMass = -0.5f;
+
+    [Header("Drift & Friction Settings")]
     public float driftSteerMultiplier = 1.1f; // How much to increase steering when drifting
     public float minRearFriction = 0.7f; // Friction at max speed
     public float frontFriction = 1.0f;
@@ -15,14 +36,19 @@ public class Car : MonoBehaviour
     public float maxDriftSpeed = 40f; // Speed at which friction is lowest
     public float driftTurnThreshold = 0.35f; // Minimum input to consider as turning
     public float driftAssist = 100f;
+
+    // Internal state
     float horizontalInput, verticalInput;
-    public float idleDrag = 2f; // Linear drag when idle
-    public float movingDrag = 0.05f; // Linear drag when moving
 
     // Input System
     private PlayerInput playerInput;
     private InputAction moveAction;
     private InputAction unstuckAction;
+
+    void Start()
+    {
+        rigid.centerOfMass = new Vector3(0, -0.5f, 0);
+    }
 
     void Awake()
     {
@@ -38,6 +64,58 @@ public class Car : MonoBehaviour
 
     void Update()
     {
+
+        // Boost input (Left Shift)
+        if (Keyboard.current != null)
+        {
+            // Allow boosting if not overheated and heat is below maxHeat
+            boosting = Keyboard.current.leftShiftKey.isPressed && !overheated && heat < maxHeat;
+        }
+
+        // Heat logic
+        if (boosting)
+        {
+            heat += heatGainRate * Time.deltaTime;
+            if (heat >= maxHeat)
+            {
+                heat = maxHeat;
+                overheated = true;
+                boosting = false;
+            }
+        }
+        else if (overheated)
+        {
+            // While overheated, only cool down (slower)
+            if (heat > 0f)
+            {
+                heat -= overheatCoolRate * Time.deltaTime;
+                if (heat < 0f) heat = 0f;
+            }
+            // Only reset overheated when heat is fully cooled
+            if (heat <= 0f)
+            {
+                overheated = false;
+            }
+        }
+        else
+        {
+            // Not boosting, not overheated: normal cooldown
+            if (heat > 0f)
+            {
+                heat -= heatCoolRate * Time.deltaTime;
+                if (heat < 0f) heat = 0f;
+            }
+        }
+
+        // Update TMP text
+        if (boostText != null)
+        {
+            if (overheated)
+                boostText.text = $"HEAT: {Mathf.FloorToInt(heat)} (OVERHEATED)";
+            else
+                boostText.text = $"HEAT: {Mathf.FloorToInt(heat)}";
+        }
+
         if (moveAction != null)
         {
             Vector2 move = moveAction.ReadValue<Vector2>();
@@ -90,7 +168,21 @@ public class Car : MonoBehaviour
 
     void FixedUpdate()
     {
-        float motor = verticalInput * drivespeed;
+        // Only allow boost if at least one wheel is grounded
+        bool grounded = false;
+        WheelHit hit;
+        if (wheel1.GetGroundHit(out hit) && hit.collider != null) grounded = true;
+        else if (wheel2.GetGroundHit(out hit) && hit.collider != null) grounded = true;
+        else if (wheel3.GetGroundHit(out hit) && hit.collider != null) grounded = true;
+        else if (wheel4.GetGroundHit(out hit) && hit.collider != null) grounded = true;
+
+        // Apply boost force if boosting, not overheated, and grounded
+        if (boosting && grounded)
+        {
+            rigid.AddForce(transform.forward * boostForce * Time.fixedDeltaTime, ForceMode.Acceleration);
+        }
+    float speedMultiplier = (overheated ? overheatSlowMultiplier : 1f);
+    float motor = verticalInput * drivespeed * speedMultiplier;
 
         wheel1.motorTorque = motor;
         wheel2.motorTorque = motor;

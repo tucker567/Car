@@ -39,6 +39,8 @@ public class Car : MonoBehaviour
 
     [Header("Audio")]
     public AudioSource engine;           // Drag the engine AudioSource here in Inspector
+    [Range(0f, 4f)]
+    public float engineVolume = 2f;      // Increase max and default value
 
     // Internal state
     float horizontalInput, verticalInput;
@@ -142,11 +144,12 @@ public class Car : MonoBehaviour
             StartCoroutine(SmoothUnstuck());
         }
 
-        // Engine sound pitch based on speed
+        // Engine sound pitch and volume based on speed
         if (engine != null)
         {
             float speed = rigid.linearVelocity.magnitude;
             engine.pitch = Mathf.Lerp(0.8f, 2.0f, speed / 40f); // Adjust max speed as needed
+            engine.volume = engineVolume; // Set volume from slider
             if (!engine.isPlaying)
                 engine.Play();
         }

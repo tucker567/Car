@@ -37,6 +37,9 @@ public class Car : MonoBehaviour
     public float driftTurnThreshold = 0.35f; // Minimum input to consider as turning
     public float driftAssist = 100f;
 
+    [Header("Audio")]
+    public AudioSource engine;           // Drag the engine AudioSource here in Inspector
+
     // Internal state
     float horizontalInput, verticalInput;
 
@@ -137,6 +140,15 @@ public class Car : MonoBehaviour
         if (unstuckPressed && !unstuckInProgress && rigid.linearVelocity.magnitude < 0.1f)
         {
             StartCoroutine(SmoothUnstuck());
+        }
+
+        // Engine sound pitch based on speed
+        if (engine != null)
+        {
+            float speed = rigid.linearVelocity.magnitude;
+            engine.pitch = Mathf.Lerp(0.8f, 2.0f, speed / 40f); // Adjust max speed as needed
+            if (!engine.isPlaying)
+                engine.Play();
         }
     }
 

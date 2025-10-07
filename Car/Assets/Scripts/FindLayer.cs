@@ -20,8 +20,6 @@ public class FindLayer : MonoBehaviour
         if (Physics.Raycast(transform.position, Vector3.down, out hit, 5f))
         {
             int layer = hit.collider.gameObject.layer;
-            string layerName = LayerMask.LayerToName(layer);
-            Debug.Log($"Car is on layer: {layerName} (ID: {layer})");
             CurrentGroundLayer = layer;
         }
         else

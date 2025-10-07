@@ -26,6 +26,9 @@ public class AiCar : MonoBehaviour
     public float lowSpeedTorqueMultiplier = 2.5f; // Increase for more hill climbing power
     public float lowSpeedThreshold = 4f; // Speed below which extra torque is applied
 
+    public Transform playerCar; // Assign this from your AI manager or inspector
+    public float flipRecoveryDistance = 40f; // Minimum distance from player to flip
+
     void Start()
     {
         rigid.centerOfMass = new Vector3(0, -0.5f, 0);
@@ -116,5 +119,31 @@ public class AiCar : MonoBehaviour
         // Example: Apply brakes if not accelerating
         bool isBraking = verticalInput < 0.1f;
         ApplyBrakes(isBraking);
+
+        // --- Flip Recovery System ---
+        // Only flip if upside down AND player is far away
+        if (Vector3.Dot(transform.up, Vector3.up) < 0.3f)
+        {
+            flipTimer += Time.fixedDeltaTime;
+            float playerDist = playerCar != null ? Vector3.Distance(transform.position, playerCar.position) : Mathf.Infinity;
+            if (flipTimer > 1f && playerDist > flipRecoveryDistance)
+            {
+                // Upright the car
+                Vector3 pos = transform.position;
+                Quaternion upright = Quaternion.LookRotation(transform.forward, Vector3.up);
+                rigid.MovePosition(pos + Vector3.up * 0.5f); // Lift slightly to avoid ground collision
+                rigid.MoveRotation(upright);
+                rigid.linearVelocity = Vector3.zero;
+                rigid.angularVelocity = Vector3.zero;
+                flipTimer = 0f;
+            }
+        }
+        else
+        {
+            flipTimer = 0f;
+        }
     }
+
+    // Add this field to the class:
+    private float flipTimer = 0f;
 }

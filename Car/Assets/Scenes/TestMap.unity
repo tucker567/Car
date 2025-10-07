@@ -745,21 +745,12 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 5623453465768008823, guid: 3ae1544e0c2393343ac8b709bf9f34ee, type: 3}
-      propertyPath: drivespeed
-      value: 1000
-      objectReference: {fileID: 0}
-    - target: {fileID: 5623453465768008823, guid: 3ae1544e0c2393343ac8b709bf9f34ee, type: 3}
-      propertyPath: driftAssist
-      value: 0
-      objectReference: {fileID: 0}
     - target: {fileID: 8114768249187376561, guid: 3ae1544e0c2393343ac8b709bf9f34ee, type: 3}
       propertyPath: playerCar
       value: 
       objectReference: {fileID: 1434297653}
     m_RemovedComponents: []
-    m_RemovedGameObjects:
-    - {fileID: 4031922345634445481, guid: 3ae1544e0c2393343ac8b709bf9f34ee, type: 3}
+    m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 3ae1544e0c2393343ac8b709bf9f34ee, type: 3}
@@ -1198,10 +1189,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Camera
   target: {fileID: 1434297653}
-  offset: {x: 0, y: 5.5, z: -11}
+  offset: {x: 0, y: 1.2, z: -13}
   smoothSpeed: 1
   orbitSmoothSpeed: 0.14
   orbitLag: 0.9
+  mouseSensitivity: 30
+  returnToCarSpeed: 2
+  minPitch: 5
+  maxPitch: 80
 --- !u!1 &342870152
 GameObject:
   m_ObjectHideFlags: 0

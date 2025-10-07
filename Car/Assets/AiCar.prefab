@@ -120,7 +120,7 @@ MonoBehaviour:
   stuckCheckInterval: 4
   stuckSpeedThreshold: 0.2
   unstuckDistanceThreshold: 40
-  unstuckRotateSpeed: 50
+  unstuckRotateSpeed: 200
   speedKp: 0.5
   speedKi: 0.05
   speedKd: 0.1

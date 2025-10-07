@@ -13,8 +13,11 @@ public class Camera : MonoBehaviour
     private float targetYaw;
     private bool isDragging = false;
     private float dragYaw = 0f;
+    private float dragPitch = 20f; // Default pitch angle
     public float mouseSensitivity = 3f;
     public float returnToCarSpeed = 2f;
+    public float minPitch = 5f;
+    public float maxPitch = 80f;
 
     void LateUpdate()
     {
@@ -34,16 +37,19 @@ public class Camera : MonoBehaviour
         if (isDragging)
         {
             dragYaw += Mouse.current.delta.x.ReadValue() * mouseSensitivity * Time.deltaTime;
+            dragPitch -= Mouse.current.delta.y.ReadValue() * mouseSensitivity * Time.deltaTime;
+            dragPitch = Mathf.Clamp(dragPitch, minPitch, maxPitch);
             currentYaw = dragYaw;
         }
         else
         {
             targetYaw = target.eulerAngles.y;
             currentYaw = Mathf.LerpAngle(currentYaw, targetYaw, Time.deltaTime * returnToCarSpeed);
+            dragPitch = Mathf.Lerp(dragPitch, 20f, Time.deltaTime * returnToCarSpeed); // Return pitch to default
         }
 
-        // Calculate the rotated offset based on the lagged yaw
-        Quaternion orbitRotation = Quaternion.Euler(0, currentYaw, 0);
+        // Calculate the rotated offset based on the lagged yaw and pitch
+        Quaternion orbitRotation = Quaternion.Euler(dragPitch, currentYaw, 0);
         Vector3 desiredPosition = target.position + orbitRotation * offset;
         Vector3 smoothedPosition = Vector3.Lerp(transform.position, desiredPosition, smoothSpeed);
         transform.position = smoothedPosition;

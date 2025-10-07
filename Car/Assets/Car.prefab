@@ -19,7 +19,7 @@ GameObject:
   - component: {fileID: 1142471013895667572}
   m_Layer: 8
   m_Name: Car
-  m_TagString: Player
+  m_TagString: playerCar
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -473,7 +473,7 @@ GameObject:
   - component: {fileID: 2410794847068953059}
   m_Layer: 8
   m_Name: CarBody
-  m_TagString: Untagged
+  m_TagString: playerCar
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -6063,7 +6063,7 @@ GameObject:
   - component: {fileID: 267968818246662573}
   m_Layer: 8
   m_Name: Wheels
-  m_TagString: Untagged
+  m_TagString: playerCar
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0

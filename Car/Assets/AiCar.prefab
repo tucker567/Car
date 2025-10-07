@@ -15,9 +15,9 @@ GameObject:
   - component: {fileID: 1936023838051967951}
   - component: {fileID: 5760650958158222177}
   - component: {fileID: 2510191410239446943}
-  m_Layer: 0
+  m_Layer: 9
   m_Name: AiCar
-  m_TagString: Untagged
+  m_TagString: AICar
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -85,15 +85,17 @@ MonoBehaviour:
   wheel4: {fileID: 4089655997578068238}
   drivespeed: 1000
   steerspeed: 30
-  idleDrag: 0.75
+  idleDrag: 4
   movingDrag: 0.05
-  maxRearFriction: 1
-  minRearFriction: 1
+  maxRearFriction: 2
+  minRearFriction: 2
   driftSteerReduction: 0.5
   driftAssist: 0
   brakeTorque: 5000
   horizontalInput: 0
   verticalInput: 0
+  lowSpeedTorqueMultiplier: 2.5
+  lowSpeedThreshold: 6
 --- !u!114 &8114768249187376561
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -115,6 +117,13 @@ MonoBehaviour:
   minFollowDistance: 1.5
   maxFollowDistance: 4
   sideSwitchThreshold: 2
+  stuckCheckInterval: 4
+  stuckSpeedThreshold: 0.2
+  unstuckDistanceThreshold: 40
+  unstuckRotateSpeed: 50
+  speedKp: 0.5
+  speedKi: 0.05
+  speedKd: 0.1
 --- !u!114 &1936023838051967951
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -252,7 +261,7 @@ GameObject:
   - component: {fileID: 3273679607258737517}
   - component: {fileID: 4535228410772217065}
   - component: {fileID: 2410794847068953059}
-  m_Layer: 0
+  m_Layer: 9
   m_Name: CarBody
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -361,7 +370,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1762393807360205766}
   - component: {fileID: 3293548495261205058}
-  m_Layer: 0
+  m_Layer: 9
   m_Name: FrontRightWheelCol
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -433,7 +442,7 @@ GameObject:
   - component: {fileID: 431145753413364423}
   - component: {fileID: 6676859168319898644}
   - component: {fileID: 7476268641142955418}
-  m_Layer: 0
+  m_Layer: 9
   m_Name: SkidMarkR
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -613,7 +622,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 7549747524032181688}
-  m_Layer: 0
+  m_Layer: 9
   m_Name: BackRightWheel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -647,7 +656,7 @@ GameObject:
   - component: {fileID: 431129408379777016}
   - component: {fileID: 2313417656289702628}
   - component: {fileID: 3174999667007994806}
-  m_Layer: 0
+  m_Layer: 9
   m_Name: SkidMarkL
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -830,7 +839,7 @@ GameObject:
   - component: {fileID: 6029913364119942301}
   - component: {fileID: 6594861872246035428}
   - component: {fileID: 2451464102537546333}
-  m_Layer: 0
+  m_Layer: 9
   m_Name: Cylinder (2)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -934,7 +943,7 @@ GameObject:
   m_Component:
   - component: {fileID: 6803683020351869749}
   - component: {fileID: 2414679458786513287}
-  m_Layer: 0
+  m_Layer: 9
   m_Name: BackLeftWheelCol
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1006,7 +1015,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 267968818246662573}
-  m_Layer: 0
+  m_Layer: 9
   m_Name: Wheels
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1046,7 +1055,7 @@ GameObject:
   m_Component:
   - component: {fileID: 401363105252251856}
   - component: {fileID: 2114291455802639633}
-  m_Layer: 0
+  m_Layer: 9
   m_Name: FrontLeftWheelCol
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1116,7 +1125,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1100842454488198643}
-  m_Layer: 0
+  m_Layer: 9
   m_Name: FrontLeftWheel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1148,7 +1157,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1345378778140341642}
-  m_Layer: 0
+  m_Layer: 9
   m_Name: FrontRightWheel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1180,7 +1189,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 4349723022313589740}
-  m_Layer: 0
+  m_Layer: 9
   m_Name: BackLeftWheel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1213,7 +1222,7 @@ GameObject:
   m_Component:
   - component: {fileID: 7366365822926264087}
   - component: {fileID: 4089655997578068238}
-  m_Layer: 0
+  m_Layer: 9
   m_Name: BackRightWheelCol
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1288,7 +1297,7 @@ GameObject:
   - component: {fileID: 5231377546141121219}
   - component: {fileID: 1700346683892492423}
   - component: {fileID: 6683347883836983300}
-  m_Layer: 0
+  m_Layer: 9
   m_Name: Cylinder (1)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1394,7 +1403,7 @@ GameObject:
   - component: {fileID: 5359715571062726517}
   - component: {fileID: 1835067119552608293}
   - component: {fileID: 5840699134788993225}
-  m_Layer: 0
+  m_Layer: 9
   m_Name: Cylinder
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1500,7 +1509,7 @@ GameObject:
   - component: {fileID: 5365636659210478412}
   - component: {fileID: 3897193086501164169}
   - component: {fileID: 4078598969076784123}
-  m_Layer: 0
+  m_Layer: 9
   m_Name: Cylinder (3)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1605,6 +1614,10 @@ PrefabInstance:
     - target: {fileID: 4554548903438203429, guid: 9dfc1a47150a37842b45f3f0396a7096, type: 3}
       propertyPath: m_Name
       value: DriftDust
+      objectReference: {fileID: 0}
+    - target: {fileID: 4554548903438203429, guid: 9dfc1a47150a37842b45f3f0396a7096, type: 3}
+      propertyPath: m_Layer
+      value: 9
       objectReference: {fileID: 0}
     - target: {fileID: 5721906506454074748, guid: 9dfc1a47150a37842b45f3f0396a7096, type: 3}
       propertyPath: lengthInSec
@@ -1712,6 +1725,10 @@ PrefabInstance:
     - target: {fileID: 4554548903438203429, guid: 9dfc1a47150a37842b45f3f0396a7096, type: 3}
       propertyPath: m_Name
       value: DriftDust
+      objectReference: {fileID: 0}
+    - target: {fileID: 4554548903438203429, guid: 9dfc1a47150a37842b45f3f0396a7096, type: 3}
+      propertyPath: m_Layer
+      value: 9
       objectReference: {fileID: 0}
     - target: {fileID: 5721906506454074748, guid: 9dfc1a47150a37842b45f3f0396a7096, type: 3}
       propertyPath: lengthInSec

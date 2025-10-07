@@ -17,9 +17,9 @@ GameObject:
   - component: {fileID: 4405057869381150677}
   - component: {fileID: 2510191410239446943}
   - component: {fileID: 1142471013895667572}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Car
-  m_TagString: Untagged
+  m_TagString: Player
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -471,7 +471,7 @@ GameObject:
   - component: {fileID: 3273679607258737517}
   - component: {fileID: 4535228410772217065}
   - component: {fileID: 2410794847068953059}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: CarBody
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -580,7 +580,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1762393807360205766}
   - component: {fileID: 3293548495261205058}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: FrontRightWheelCol
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -652,7 +652,7 @@ GameObject:
   - component: {fileID: 431145753413364423}
   - component: {fileID: 6676859168319898644}
   - component: {fileID: 7476268641142955418}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: SkidMarkR
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -832,7 +832,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 7549747524032181688}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: BackRightWheel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -866,7 +866,7 @@ GameObject:
   - component: {fileID: 431129408379777016}
   - component: {fileID: 2313417656289702628}
   - component: {fileID: 3174999667007994806}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: SkidMarkL
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1049,7 +1049,7 @@ GameObject:
   - component: {fileID: 6029913364119942301}
   - component: {fileID: 6594861872246035428}
   - component: {fileID: 2451464102537546333}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Cylinder (2)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1154,7 +1154,7 @@ GameObject:
   - component: {fileID: 987237327465990672}
   - component: {fileID: 8204510502164720951}
   - component: {fileID: 153556872805616695}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: DustParticles
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -5989,7 +5989,7 @@ GameObject:
   m_Component:
   - component: {fileID: 6803683020351869749}
   - component: {fileID: 2414679458786513287}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: BackLeftWheelCol
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -6061,7 +6061,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 267968818246662573}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Wheels
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -6101,7 +6101,7 @@ GameObject:
   m_Component:
   - component: {fileID: 401363105252251856}
   - component: {fileID: 2114291455802639633}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: FrontLeftWheelCol
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -6171,7 +6171,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1100842454488198643}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: FrontLeftWheel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -6203,7 +6203,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1345378778140341642}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: FrontRightWheel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -6235,7 +6235,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 4349723022313589740}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: BackLeftWheel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -6268,7 +6268,7 @@ GameObject:
   m_Component:
   - component: {fileID: 7366365822926264087}
   - component: {fileID: 4089655997578068238}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: BackRightWheelCol
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -6343,7 +6343,7 @@ GameObject:
   - component: {fileID: 5231377546141121219}
   - component: {fileID: 1700346683892492423}
   - component: {fileID: 6683347883836983300}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Cylinder (1)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -6449,7 +6449,7 @@ GameObject:
   - component: {fileID: 5359715571062726517}
   - component: {fileID: 1835067119552608293}
   - component: {fileID: 5840699134788993225}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Cylinder
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -6555,7 +6555,7 @@ GameObject:
   - component: {fileID: 5365636659210478412}
   - component: {fileID: 3897193086501164169}
   - component: {fileID: 4078598969076784123}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Cylinder (3)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -6660,6 +6660,10 @@ PrefabInstance:
     - target: {fileID: 4554548903438203429, guid: 9dfc1a47150a37842b45f3f0396a7096, type: 3}
       propertyPath: m_Name
       value: DriftDust
+      objectReference: {fileID: 0}
+    - target: {fileID: 4554548903438203429, guid: 9dfc1a47150a37842b45f3f0396a7096, type: 3}
+      propertyPath: m_Layer
+      value: 8
       objectReference: {fileID: 0}
     - target: {fileID: 5721906506454074748, guid: 9dfc1a47150a37842b45f3f0396a7096, type: 3}
       propertyPath: lengthInSec
@@ -6767,6 +6771,10 @@ PrefabInstance:
     - target: {fileID: 4554548903438203429, guid: 9dfc1a47150a37842b45f3f0396a7096, type: 3}
       propertyPath: m_Name
       value: DriftDust
+      objectReference: {fileID: 0}
+    - target: {fileID: 4554548903438203429, guid: 9dfc1a47150a37842b45f3f0396a7096, type: 3}
+      propertyPath: m_Layer
+      value: 8
       objectReference: {fileID: 0}
     - target: {fileID: 5721906506454074748, guid: 9dfc1a47150a37842b45f3f0396a7096, type: 3}
       propertyPath: lengthInSec

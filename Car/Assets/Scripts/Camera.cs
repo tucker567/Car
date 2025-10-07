@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 public class Camera : MonoBehaviour
 {
@@ -10,15 +11,36 @@ public class Camera : MonoBehaviour
 
     private float currentYaw;
     private float targetYaw;
+    private bool isDragging = false;
+    private float dragYaw = 0f;
+    public float mouseSensitivity = 3f;
+    public float returnToCarSpeed = 2f;
 
     void LateUpdate()
     {
         if (target == null) return;
 
-        // Get the car's yaw (rotation around Y axis)
-        targetYaw = target.eulerAngles.y;
-        // Smoothly interpolate the camera's yaw to lag behind the car
-        currentYaw = Mathf.LerpAngle(currentYaw, targetYaw, orbitSmoothSpeed * (1f - orbitLag));
+        // Mouse drag logic using new Input System
+        if (Mouse.current.rightButton.wasPressedThisFrame)
+        {
+            isDragging = true;
+            dragYaw = currentYaw;
+        }
+        if (Mouse.current.rightButton.wasReleasedThisFrame)
+        {
+            isDragging = false;
+        }
+
+        if (isDragging)
+        {
+            dragYaw += Mouse.current.delta.x.ReadValue() * mouseSensitivity * Time.deltaTime;
+            currentYaw = dragYaw;
+        }
+        else
+        {
+            targetYaw = target.eulerAngles.y;
+            currentYaw = Mathf.LerpAngle(currentYaw, targetYaw, Time.deltaTime * returnToCarSpeed);
+        }
 
         // Calculate the rotated offset based on the lagged yaw
         Quaternion orbitRotation = Quaternion.Euler(0, currentYaw, 0);
@@ -30,4 +52,3 @@ public class Camera : MonoBehaviour
         transform.LookAt(target.position);
     }
 }
- 

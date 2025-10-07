@@ -16,10 +16,15 @@ public class AiFolowCar : MonoBehaviour
     private Vector3 lastPosition;
     private float stuckTimer = 0f;
     private bool isRotatingToUnstuck = false;
-    public float stuckCheckInterval = 2f; // seconds to check for stuck
-    public float stuckSpeedThreshold = 0.5f; // below this speed is considered stuck
-    public float unstuckDistanceThreshold = 30f; // far from player
+    public float stuckCheckInterval = 4f; // seconds to check for stuck (was 2f)
+    public float stuckSpeedThreshold = 0.2f; // below this speed is considered stuck (was 0.5f)
+    public float unstuckDistanceThreshold = 40f; // far from player (was 30f)
     public float unstuckRotateSpeed = 50f; // degrees per second
+
+    // PID controller variables for speed matching
+    private float speedErrorSum = 0f;
+    private float lastSpeedError = 0f;
+    public float speedKp = 0.5f, speedKi = 0.05f, speedKd = 0.1f;
 
     // Update is called once per frame
     void Update()
@@ -70,7 +75,6 @@ public class AiFolowCar : MonoBehaviour
             playerVelocity = playerRb.linearVelocity;
 
         float playerSpeed = playerVelocity.magnitude;
-
         Vector3 predictedPlayerPos = playerCar.position + playerVelocity * 0.5f;
 
         // Adaptive follow distance
@@ -100,47 +104,90 @@ public class AiFolowCar : MonoBehaviour
 
         Vector3 targetPos = driveOnLeft ? leftTarget : rightTarget;
 
+        // --- Collision Avoidance ---
+        // Raycast forward, left, and right to avoid obstacles
+        float avoidStrength = 0f;
+        RaycastHit hit;
+        if (Physics.Raycast(aiCar.transform.position + Vector3.up, aiCar.transform.forward, out hit, 6f))
+        {
+            if (!hit.collider.CompareTag("playerCar") && !hit.collider.CompareTag("AICar"))
+            {
+                avoidStrength -= 1f;
+            }
+        }
+        if (Physics.Raycast(aiCar.transform.position + Vector3.up, aiCar.transform.right, out hit, 3f))
+        {
+            if (!hit.collider.CompareTag("playerCar") && !hit.collider.CompareTag("AICar"))
+            {
+                avoidStrength -= 0.5f;
+            }
+        }
+        if (Physics.Raycast(aiCar.transform.position + Vector3.up, -aiCar.transform.right, out hit, 3f))
+        {
+            if (!hit.collider.CompareTag("playerCar") && !hit.collider.CompareTag("AICar"))
+            {
+                avoidStrength += 0.5f;
+            }
+        }
+
         // Direction to target
         Vector3 toTarget = targetPos - aiCar.transform.position;
-        float distanceToTarget = toTarget.magnitude; // <-- Add this line
+        float distanceToTarget = toTarget.magnitude;
         Vector3 forward = aiCar.transform.forward;
         float angleToTarget = Vector3.Angle(forward, toTarget);
         Vector3 localTarget = aiCar.transform.InverseTransformPoint(targetPos);
 
-        // --- Speed matching logic ---
-        float speedDiff = playerSpeed - aiSpeed;
+        // --- Speed Matching with PID ---
+        float speedError = playerSpeed - aiSpeed;
+        speedErrorSum += speedError * Time.deltaTime;
+        float speedErrorRate = (speedError - lastSpeedError) / Time.deltaTime;
+        lastSpeedError = speedError;
 
-        // If very far from player, boost to catch up
-        if (distanceToPlayer > 20f)
+        float pidAccel = speedKp * speedError + speedKi * speedErrorSum + speedKd * speedErrorRate;
+        pidAccel = Mathf.Clamp(pidAccel, -maxAccel, maxAccel);
+
+        // If REALLY far from player, boost to catch up
+        if (distanceToPlayer > 40f)
         {
-            aiCar.verticalInput = maxAccel * 2f; // Double acceleration
+            aiCar.verticalInput = maxAccel * 2f;
         }
         else if (distanceToTarget < 5f)
         {
-            // Match speed smoothly
-            aiCar.verticalInput = Mathf.Clamp(speedDiff * 0.2f, -maxAccel, maxAccel);
+            aiCar.verticalInput = pidAccel;
         }
         else
         {
-            // Normal follow logic
             float forwardDot = Vector3.Dot(forward, toTarget.normalized);
             aiCar.verticalInput = Mathf.Clamp(forwardDot, 0f, maxAccel);
         }
 
-        // Steering logic (same as before)
+        // --- Slip/Spin Handling ---
+        Vector3 localVel = aiCar.transform.InverseTransformDirection(aiCar.rigid.linearVelocity);
+        if (Mathf.Abs(localVel.x) > 2f && aiSpeed > 5f)
+        {
+            // Reduce acceleration and apply stabilizing force
+            aiCar.verticalInput *= 0.5f;
+            Vector3 driftForce = -aiCar.transform.right * localVel.x * aiCar.driftAssist;
+            aiCar.rigid.AddForce(driftForce, ForceMode.Force);
+        }
+
+        // --- Steering logic with avoidance ---
+        float steerInput = localTarget.x / 5f + avoidStrength;
+        steerInput = Mathf.Clamp(steerInput, -maxSteer, maxSteer);
+
         if (angleToTarget > 135f)
         {
             aiCar.verticalInput = 0.8f;
-            aiCar.horizontalInput = Mathf.Clamp(localTarget.x, -maxSteer, maxSteer);
+            aiCar.horizontalInput = steerInput;
         }
         else if (angleToTarget > 90f)
         {
             aiCar.verticalInput = -0.8f;
-            aiCar.horizontalInput = Mathf.Clamp(localTarget.x, -maxSteer, maxSteer);
+            aiCar.horizontalInput = steerInput;
         }
         else
         {
-            aiCar.horizontalInput = Mathf.Clamp(localTarget.x / 5f, -maxSteer, maxSteer);
+            aiCar.horizontalInput = steerInput;
         }
     }
 }

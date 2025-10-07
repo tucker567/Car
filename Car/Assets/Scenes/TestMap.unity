@@ -7995,6 +7995,39 @@ MonoBehaviour:
     - {fileID: 8300000, guid: 7edeed15d7aa7d148a68f5abb8220d68, type: 3}
     - {fileID: 8300000, guid: c8739d8a47ba68746b1b9c5f6de25864, type: 3}
     - {fileID: 8300000, guid: 507be3587e937ef4588cf02067be0fad, type: 3}
+  - albumName: DOS-88
+    songs:
+    - {fileID: 8300000, guid: 3f5e463582544e04ba2358a18892c451, type: 3}
+    - {fileID: 8300000, guid: 210b95baeb2708b47a1e02f9ae954ee5, type: 3}
+    - {fileID: 8300000, guid: 4c55469d3566147479704f3ddd1702ff, type: 3}
+    - {fileID: 8300000, guid: ea1e3961c57127a49a155835ec18619c, type: 3}
+    - {fileID: 8300000, guid: 7a7d3f156075e904786036f710e0f0a6, type: 3}
+    - {fileID: 8300000, guid: c9ed275d495aa3b429342898823d77e5, type: 3}
+    - {fileID: 8300000, guid: ee6964794c155d249a643e680aaeb27a, type: 3}
+    - {fileID: 8300000, guid: d2b961ffb34f1ef4797a9f14313ef0e4, type: 3}
+  - albumName: NotJam
+    songs:
+    - {fileID: 8300000, guid: c3845d65fbe82664eb773ca12c08ea33, type: 3}
+    - {fileID: 8300000, guid: f7a2a52ee669a454c8d35e5f9365ab5a, type: 3}
+    - {fileID: 8300000, guid: 42a945b598ccef142bcbdd5a273d2791, type: 3}
+    - {fileID: 8300000, guid: 0f3a118a62b205a46a0e220fee5d335f, type: 3}
+    - {fileID: 8300000, guid: 885d87e996b026546add4e2df26f6bed, type: 3}
+    - {fileID: 8300000, guid: be8484e14ebd8d2469ba0426aee41fe0, type: 3}
+    - {fileID: 8300000, guid: 51a6f5aee6ca81c4b9b2eaf81574931d, type: 3}
+    - {fileID: 8300000, guid: fc6947f096f0e394d8c280eb522fc1fc, type: 3}
+    - {fileID: 8300000, guid: 360b1b300d3d857448e57676e164b64c, type: 3}
+    - {fileID: 8300000, guid: 5532e5fa16da00a4388db4172e0a560a, type: 3}
+    - {fileID: 8300000, guid: 75d55302cd57d21439ca8cb363194765, type: 3}
+    - {fileID: 8300000, guid: a8f151c29c4e52e4da89a788b4ae608b, type: 3}
+    - {fileID: 8300000, guid: c2dd72812eac752419647b22237f8192, type: 3}
+    - {fileID: 8300000, guid: e9be169b8e160cd40a4c4bc6e636fa78, type: 3}
+    - {fileID: 8300000, guid: 18ec3552391608b439489e1ffefb0d26, type: 3}
+    - {fileID: 8300000, guid: 4c1c7384ca7f37e4b8f1d8cb5c71cc7c, type: 3}
+    - {fileID: 8300000, guid: 9cddab115c36fa64c98943a07a6abe26, type: 3}
+    - {fileID: 8300000, guid: a45d890138a2c724190af2f8afd2941a, type: 3}
+    - {fileID: 8300000, guid: 9966005a13a70784aad1bb257e58aa1a, type: 3}
+    - {fileID: 8300000, guid: b64db615932a94c4cac4de9bc7abf3ac, type: 3}
+    - {fileID: 8300000, guid: cfe5f115af71d8c41a15fad83e06795c, type: 3}
   volume: 0.9
   albumText: {fileID: 404023477}
   songText: {fileID: 244746183}

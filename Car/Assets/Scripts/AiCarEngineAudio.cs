@@ -5,7 +5,8 @@ public class AiCarEngineAudio : MonoBehaviour
     public AudioSource engineAudio;
     public float minPitch = 0.8f;
     public float maxPitch = 2.0f;
-    public float constantVolume = 0.2f; // Set a lower constant volume
+    public float idleVolume = 0.15f; // Louder idle
+    public float maxVolume = 0.3f;   // Volume at max speed
     public Rigidbody rigid;
 
     void Start()
@@ -17,7 +18,8 @@ public class AiCarEngineAudio : MonoBehaviour
         if (engineAudio != null)
         {
             engineAudio.loop = true;
-            engineAudio.volume = constantVolume; // Set volume once
+            engineAudio.volume = idleVolume;
+            engineAudio.spatialBlend = 1f; // Make audio fully 3D
             engineAudio.Play();
         }
     }
@@ -28,7 +30,7 @@ public class AiCarEngineAudio : MonoBehaviour
         {
             float speed = rigid.linearVelocity.magnitude;
             engineAudio.pitch = Mathf.Lerp(minPitch, maxPitch, speed / 40f);
-            // Volume stays constant
+            engineAudio.volume = Mathf.Lerp(idleVolume, maxVolume, speed / 40f);
         }
     }
 }

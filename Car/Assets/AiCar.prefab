@@ -153,8 +153,8 @@ MonoBehaviour:
   engineAudio: {fileID: 2510191410239446943}
   minPitch: 0.8
   maxPitch: 2
-  minVolume: 0.1
-  maxVolume: 1
+  idleVolume: 0.7
+  maxVolume: 0.5
   rigid: {fileID: 6410409409001862846}
 --- !u!82 &2510191410239446943
 AudioSource:
@@ -167,7 +167,7 @@ AudioSource:
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 0}
   m_audioClip: {fileID: 0}
-  m_Resource: {fileID: 8300000, guid: 08d8ccd5006dbd84eaa6513216e56c86, type: 3}
+  m_Resource: {fileID: 8300000, guid: 231f9b90c682f184995511afe6add749, type: 3}
   m_PlayOnAwake: 1
   m_Volume: 1
   m_Pitch: 1
@@ -213,7 +213,7 @@ AudioSource:
     m_Curve:
     - serializedVersion: 3
       time: 0
-      value: 0
+      value: 1
       inSlope: 0
       outSlope: 0
       tangentMode: 0

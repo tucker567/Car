@@ -17,6 +17,7 @@ GameObject:
   - component: {fileID: 4405057869381150677}
   - component: {fileID: 2510191410239446943}
   - component: {fileID: 1142471013895667572}
+  - component: {fileID: 2439950031111474264}
   m_Layer: 8
   m_Name: Car
   m_TagString: playerCar
@@ -106,8 +107,7 @@ MonoBehaviour:
   maxDriftSpeed: 30
   driftTurnThreshold: 0.35
   driftAssist: 85
-  engine: {fileID: 2510191410239446943}
-  engineVolume: 0.15
+  engineVolume: 0.2
 --- !u!114 &1936023838051967951
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -132,8 +132,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5be2350705b91c149b88e9d7cc4843b8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Engine
-  pitchChangeSpeed: 1.5
-  MaxPitch: 2.5
+  pitchChangeSpeed: 1
+  MaxPitch: 2
   MinPitch: 0.25
   IdlePitch: 1
   engine: {fileID: 2510191410239446943}
@@ -279,7 +279,7 @@ AudioSource:
   m_audioClip: {fileID: 0}
   m_Resource: {fileID: 8300000, guid: e68159a68b0cac94abfdb8e85a78e3ce, type: 3}
   m_PlayOnAwake: 1
-  m_Volume: 1
+  m_Volume: 0.15
   m_Pitch: 1
   Loop: 1
   Mute: 0
@@ -460,6 +460,14 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+--- !u!81 &2439950031111474264
+AudioListener:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 521852092362769078}
+  m_Enabled: 1
 --- !u!1 &637507449505346758
 GameObject:
   m_ObjectHideFlags: 0

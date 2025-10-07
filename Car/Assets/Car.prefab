@@ -107,7 +107,7 @@ MonoBehaviour:
   driftTurnThreshold: 0.35
   driftAssist: 85
   engine: {fileID: 2510191410239446943}
-  engineVolume: 4
+  engineVolume: 0.15
 --- !u!114 &1936023838051967951
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -136,6 +136,7 @@ MonoBehaviour:
   MaxPitch: 2.5
   MinPitch: 0.25
   IdlePitch: 1
+  engine: {fileID: 2510191410239446943}
 --- !u!114 &2280611208025103151
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -276,7 +277,7 @@ AudioSource:
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 0}
   m_audioClip: {fileID: 0}
-  m_Resource: {fileID: 8300000, guid: ce52567b4d649ec47afd4f17b730304d, type: 3}
+  m_Resource: {fileID: 8300000, guid: e68159a68b0cac94abfdb8e85a78e3ce, type: 3}
   m_PlayOnAwake: 1
   m_Volume: 1
   m_Pitch: 1

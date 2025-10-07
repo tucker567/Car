@@ -13,7 +13,7 @@ GameObject:
   - component: {fileID: 5623453465768008823}
   - component: {fileID: 8114768249187376561}
   - component: {fileID: 1936023838051967951}
-  - component: {fileID: 5760650958158222177}
+  - component: {fileID: 6801634085093756575}
   - component: {fileID: 2510191410239446943}
   m_Layer: 9
   m_Name: AiCar
@@ -96,6 +96,8 @@ MonoBehaviour:
   verticalInput: 0
   lowSpeedTorqueMultiplier: 2.5
   lowSpeedThreshold: 6
+  playerCar: {fileID: 0}
+  flipRecoveryDistance: 40
 --- !u!114 &8114768249187376561
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -136,7 +138,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 77bb2a4b1634a8341a395384f0bf6ac0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FindLayer
---- !u!114 &5760650958158222177
+--- !u!114 &6801634085093756575
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -145,13 +147,15 @@ MonoBehaviour:
   m_GameObject: {fileID: 521852092362769078}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5be2350705b91c149b88e9d7cc4843b8, type: 3}
+  m_Script: {fileID: 11500000, guid: de83c88be410ec445bb23e66c0d2b3c5, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Engine
-  pitchChangeSpeed: 1.5
-  MaxPitch: 2.5
-  MinPitch: 0.25
-  IdlePitch: 1
+  m_EditorClassIdentifier: Assembly-CSharp::AiCarEngineAudio
+  engineAudio: {fileID: 2510191410239446943}
+  minPitch: 0.8
+  maxPitch: 2
+  minVolume: 0.1
+  maxVolume: 1
+  rigid: {fileID: 6410409409001862846}
 --- !u!82 &2510191410239446943
 AudioSource:
   m_ObjectHideFlags: 0
@@ -163,7 +167,7 @@ AudioSource:
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 0}
   m_audioClip: {fileID: 0}
-  m_Resource: {fileID: 8300000, guid: ce52567b4d649ec47afd4f17b730304d, type: 3}
+  m_Resource: {fileID: 8300000, guid: 08d8ccd5006dbd84eaa6513216e56c86, type: 3}
   m_PlayOnAwake: 1
   m_Volume: 1
   m_Pitch: 1

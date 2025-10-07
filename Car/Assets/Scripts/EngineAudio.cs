@@ -11,6 +11,7 @@ public class Engine : MonoBehaviour
     public float MaxPitch = 2.5f;
     public float MinPitch = 0.7f;
     public float IdlePitch = 1.0f; // Pitch when not accelerating
+    public AudioSource engine;
 
     void Start()
     {

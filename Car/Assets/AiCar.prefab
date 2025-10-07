@@ -10,15 +10,13 @@ GameObject:
   m_Component:
   - component: {fileID: 4672444582964679318}
   - component: {fileID: 6410409409001862846}
-  - component: {fileID: 3933268957075175776}
+  - component: {fileID: 5623453465768008823}
+  - component: {fileID: 8114768249187376561}
   - component: {fileID: 1936023838051967951}
   - component: {fileID: 5760650958158222177}
-  - component: {fileID: 2280611208025103151}
-  - component: {fileID: 4405057869381150677}
   - component: {fileID: 2510191410239446943}
-  - component: {fileID: 1142471013895667572}
   m_Layer: 0
-  m_Name: Car
+  m_Name: AiCar
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -69,7 +67,7 @@ Rigidbody:
   m_Interpolate: 1
   m_Constraints: 0
   m_CollisionDetection: 0
---- !u!114 &3933268957075175776
+--- !u!114 &5623453465768008823
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -78,36 +76,39 @@ MonoBehaviour:
   m_GameObject: {fileID: 521852092362769078}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 648080a6fd9149447b433fd98e2122f7, type: 3}
+  m_Script: {fileID: 11500000, guid: 3434460ee77873941bed67ae41810880, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Car
-  maxHeat: 100
-  heat: 0
-  heatGainRate: 20
-  heatCoolRate: 50
-  overheatCoolRate: 50
-  boostForce: 550
-  boostText: {fileID: 0}
-  overheatSlowMultiplier: 0.85
+  m_EditorClassIdentifier: Assembly-CSharp::AiCar
   rigid: {fileID: 6410409409001862846}
   wheel1: {fileID: 2114291455802639633}
   wheel2: {fileID: 3293548495261205058}
   wheel3: {fileID: 2414679458786513287}
   wheel4: {fileID: 4089655997578068238}
-  drivespeed: 600
-  steerspeed: 40
+  drivespeed: 700
+  steerspeed: 30
   idleDrag: 0.75
   movingDrag: 0.05
-  centerOfMass: -0.5
-  driftSteerMultiplier: 1.3
-  minRearFriction: 0.82
-  frontFriction: 1
-  maxRearFriction: 1
-  maxDriftSpeed: 30
-  driftTurnThreshold: 0.35
-  driftAssist: 85
-  engine: {fileID: 2510191410239446943}
-  engineVolume: 4
+  horizontalInput: 0
+  verticalInput: 0
+--- !u!114 &8114768249187376561
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 521852092362769078}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1245733188b8d9d48acbd4b0f833f93b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AiFolowCar
+  playerCar: {fileID: 0}
+  aiCar: {fileID: 5623453465768008823}
+  sideOffset: 3
+  driveOnLeft: 1
+  followDistance: 2
+  maxSteer: 1
+  maxAccel: 1
 --- !u!114 &1936023838051967951
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -136,135 +137,6 @@ MonoBehaviour:
   MaxPitch: 2.5
   MinPitch: 0.25
   IdlePitch: 1
---- !u!114 &2280611208025103151
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 521852092362769078}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cf1ee31f068b8254083781a49044f9ea, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Radio
-  audioSource: {fileID: 1142471013895667572}
-  playlists:
-  - albumName: 2000's Retro Racing
-    songs:
-    - {fileID: 8300000, guid: 249454b2bbac8e34394506f27117308e, type: 3}
-    - {fileID: 8300000, guid: f3a2ba4f240ac8847b653e1a025cb62b, type: 3}
-    - {fileID: 8300000, guid: 4c59988165d31aa4c898b80ee6948044, type: 3}
-    - {fileID: 8300000, guid: 2b90354581e5f6149baa4a8f8b940b11, type: 3}
-    - {fileID: 8300000, guid: ef8c5eebfd076f546a35666da64d0b9a, type: 3}
-    - {fileID: 8300000, guid: 2d71e8c07fb7a214598f6fb4d35cb1a9, type: 3}
-    - {fileID: 8300000, guid: d2a1ec71290ddd749a4f7ac0eec9d8b6, type: 3}
-    - {fileID: 8300000, guid: cd5a9fd9bc6164b4a8852efd25be5d5e, type: 3}
-    - {fileID: 8300000, guid: 4bc6d2e918506494cb8c1bb94b886ef2, type: 3}
-    - {fileID: 8300000, guid: db1aeca6a277b2f4a8a5fc149fcad1c7, type: 3}
-  - albumName: Broken Parts
-    songs:
-    - {fileID: 8300000, guid: 0de4b8b6ff7a52e49b1339d334b5835f, type: 3}
-    - {fileID: 8300000, guid: 062c487c253753743ad6a514dafa32bc, type: 3}
-    - {fileID: 8300000, guid: 9b15188e9613f0a4ab6d074a7a26cd79, type: 3}
-    - {fileID: 8300000, guid: ead1c843855baa64c89112524f513a53, type: 3}
-    - {fileID: 8300000, guid: be1b359830065684ab85f7d8c8acf3be, type: 3}
-    - {fileID: 8300000, guid: 8de927b0bb90d6744a675644a594c9c7, type: 3}
-    - {fileID: 8300000, guid: 8eedaac3cb513f4499873f73d0777ed5, type: 3}
-    - {fileID: 8300000, guid: ba815ddd98a91c94daec568a9315a7db, type: 3}
-    - {fileID: 8300000, guid: c5631556a865cf94299f89d64bf597c0, type: 3}
-    - {fileID: 8300000, guid: 9926fe7058a3afc4a90a543122cd4d3d, type: 3}
-    - {fileID: 8300000, guid: 73461f7b28e3f614d9d4547ad67be77b, type: 3}
-    - {fileID: 8300000, guid: 757d5180e8179184cafad157120b4c93, type: 3}
-    - {fileID: 8300000, guid: 55de35d3104b685498cce90084c235b6, type: 3}
-    - {fileID: 8300000, guid: 33cc00e314835944693d3a88f0b8ec1c, type: 3}
-    - {fileID: 8300000, guid: 3495dc37ace09b24194f95f635f7b2d2, type: 3}
-    - {fileID: 8300000, guid: f0f68561c47946445ada87f7431e102c, type: 3}
-    - {fileID: 8300000, guid: b93ed11ea2752fa4cbf967c08a037884, type: 3}
-    - {fileID: 8300000, guid: b93ed11ea2752fa4cbf967c08a037884, type: 3}
-    - {fileID: 8300000, guid: d4af6c90e3299694e9f9846b84890370, type: 3}
-    - {fileID: 8300000, guid: 8f4675521a38953478ee4ff303b44def, type: 3}
-    - {fileID: 8300000, guid: 4a386e6e992f5384a9d12702d6981b1e, type: 3}
-    - {fileID: 8300000, guid: adbecbd6c7b39de4d8419e7ad1bdd9fa, type: 3}
-    - {fileID: 8300000, guid: 5d7fe13e90d71ef4c8db8847f8bd7fd2, type: 3}
-    - {fileID: 8300000, guid: 160803c77cd667147a8dbfc5654a6691, type: 3}
-    - {fileID: 8300000, guid: 79d671e2b30b07c4b83c8e95756b3cce, type: 3}
-    - {fileID: 8300000, guid: 9cc08d0ed3a2d654ebb70a0091d94845, type: 3}
-    - {fileID: 8300000, guid: 14885df9f10a81548adc5597ec2bfcaf, type: 3}
-    - {fileID: 8300000, guid: 06581c3487033b444b69f1ff2a6a0743, type: 3}
-    - {fileID: 8300000, guid: d03db83e9a7e59f4e83fe7a703e1ae9c, type: 3}
-    - {fileID: 8300000, guid: d18e2a7ae31c9e04f9e1b7f8dd9b8f7e, type: 3}
-    - {fileID: 8300000, guid: 29e859db9187e934d97e9b4360ea7d93, type: 3}
-    - {fileID: 8300000, guid: 946ed960086eb704d8b9ac4f63508ce5, type: 3}
-    - {fileID: 8300000, guid: 7edeed15d7aa7d148a68f5abb8220d68, type: 3}
-    - {fileID: 8300000, guid: c8739d8a47ba68746b1b9c5f6de25864, type: 3}
-    - {fileID: 8300000, guid: 507be3587e937ef4588cf02067be0fad, type: 3}
-  - albumName: DOS-88
-    songs:
-    - {fileID: 8300000, guid: 3f5e463582544e04ba2358a18892c451, type: 3}
-    - {fileID: 8300000, guid: 210b95baeb2708b47a1e02f9ae954ee5, type: 3}
-    - {fileID: 8300000, guid: 4c55469d3566147479704f3ddd1702ff, type: 3}
-    - {fileID: 8300000, guid: ea1e3961c57127a49a155835ec18619c, type: 3}
-    - {fileID: 8300000, guid: 7a7d3f156075e904786036f710e0f0a6, type: 3}
-    - {fileID: 8300000, guid: c9ed275d495aa3b429342898823d77e5, type: 3}
-    - {fileID: 8300000, guid: ee6964794c155d249a643e680aaeb27a, type: 3}
-    - {fileID: 8300000, guid: d2b961ffb34f1ef4797a9f14313ef0e4, type: 3}
-  - albumName: NotJam
-    songs:
-    - {fileID: 8300000, guid: c3845d65fbe82664eb773ca12c08ea33, type: 3}
-    - {fileID: 8300000, guid: f7a2a52ee669a454c8d35e5f9365ab5a, type: 3}
-    - {fileID: 8300000, guid: 42a945b598ccef142bcbdd5a273d2791, type: 3}
-    - {fileID: 8300000, guid: 0f3a118a62b205a46a0e220fee5d335f, type: 3}
-    - {fileID: 8300000, guid: 885d87e996b026546add4e2df26f6bed, type: 3}
-    - {fileID: 8300000, guid: be8484e14ebd8d2469ba0426aee41fe0, type: 3}
-    - {fileID: 8300000, guid: 51a6f5aee6ca81c4b9b2eaf81574931d, type: 3}
-    - {fileID: 8300000, guid: fc6947f096f0e394d8c280eb522fc1fc, type: 3}
-    - {fileID: 8300000, guid: 360b1b300d3d857448e57676e164b64c, type: 3}
-    - {fileID: 8300000, guid: 5532e5fa16da00a4388db4172e0a560a, type: 3}
-    - {fileID: 8300000, guid: 75d55302cd57d21439ca8cb363194765, type: 3}
-    - {fileID: 8300000, guid: a8f151c29c4e52e4da89a788b4ae608b, type: 3}
-    - {fileID: 8300000, guid: c2dd72812eac752419647b22237f8192, type: 3}
-    - {fileID: 8300000, guid: e9be169b8e160cd40a4c4bc6e636fa78, type: 3}
-    - {fileID: 8300000, guid: 18ec3552391608b439489e1ffefb0d26, type: 3}
-    - {fileID: 8300000, guid: 4c1c7384ca7f37e4b8f1d8cb5c71cc7c, type: 3}
-    - {fileID: 8300000, guid: 9cddab115c36fa64c98943a07a6abe26, type: 3}
-    - {fileID: 8300000, guid: a45d890138a2c724190af2f8afd2941a, type: 3}
-    - {fileID: 8300000, guid: 9966005a13a70784aad1bb257e58aa1a, type: 3}
-    - {fileID: 8300000, guid: b64db615932a94c4cac4de9bc7abf3ac, type: 3}
-    - {fileID: 8300000, guid: cfe5f115af71d8c41a15fad83e06795c, type: 3}
-  volume: 0.9
-  albumText: {fileID: 0}
-  songText: {fileID: 0}
---- !u!114 &4405057869381150677
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 521852092362769078}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 62899f850307741f2a39c98a8b639597, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Unity.InputSystem::UnityEngine.InputSystem.PlayerInput
-  m_Actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
-  m_NotificationBehavior: 0
-  m_UIInputModule: {fileID: 0}
-  m_DeviceLostEvent:
-    m_PersistentCalls:
-      m_Calls: []
-  m_DeviceRegainedEvent:
-    m_PersistentCalls:
-      m_Calls: []
-  m_ControlsChangedEvent:
-    m_PersistentCalls:
-      m_Calls: []
-  m_ActionEvents: []
-  m_NeverAutoSwitchControlSchemes: 0
-  m_DefaultControlScheme: 
-  m_DefaultActionMap: 
-  m_SplitScreenIndex: -1
-  m_Camera: {fileID: 0}
 --- !u!82 &2510191410239446943
 AudioSource:
   m_ObjectHideFlags: 0
@@ -281,103 +153,6 @@ AudioSource:
   m_Volume: 1
   m_Pitch: 1
   Loop: 1
-  Mute: 0
-  Spatialize: 0
-  SpatializePostEffects: 0
-  Priority: 128
-  DopplerLevel: 1
-  MinDistance: 1
-  MaxDistance: 500
-  Pan2D: 0
-  rolloffMode: 0
-  BypassEffects: 0
-  BypassListenerEffects: 0
-  BypassReverbZones: 0
-  rolloffCustomCurve:
-    serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 0
-      value: 1
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0.33333334
-      outWeight: 0.33333334
-    - serializedVersion: 3
-      time: 1
-      value: 0
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0.33333334
-      outWeight: 0.33333334
-    m_PreInfinity: 2
-    m_PostInfinity: 2
-    m_RotationOrder: 4
-  panLevelCustomCurve:
-    serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 0
-      value: 0
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0.33333334
-      outWeight: 0.33333334
-    m_PreInfinity: 2
-    m_PostInfinity: 2
-    m_RotationOrder: 4
-  spreadCustomCurve:
-    serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 0
-      value: 0
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0.33333334
-      outWeight: 0.33333334
-    m_PreInfinity: 2
-    m_PostInfinity: 2
-    m_RotationOrder: 4
-  reverbZoneMixCustomCurve:
-    serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 0
-      value: 1
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0.33333334
-      outWeight: 0.33333334
-    m_PreInfinity: 2
-    m_PostInfinity: 2
-    m_RotationOrder: 4
---- !u!82 &1142471013895667572
-AudioSource:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 521852092362769078}
-  m_Enabled: 1
-  serializedVersion: 4
-  OutputAudioMixerGroup: {fileID: 0}
-  m_audioClip: {fileID: 0}
-  m_Resource: {fileID: 0}
-  m_PlayOnAwake: 1
-  m_Volume: 1
-  m_Pitch: 1
-  Loop: 0
   Mute: 0
   Spatialize: 0
   SpatializePostEffects: 0

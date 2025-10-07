@@ -127,6 +127,11 @@ public class Car : MonoBehaviour
             horizontalInput = move.x;
             verticalInput = move.y;
         }
+        else
+        {
+            horizontalInput = Input.GetAxis("Horizontal");
+            verticalInput = Input.GetAxis("Vertical");
+        }
 
         // Unstuck button: R key or Input System action
         bool unstuckPressed = false;

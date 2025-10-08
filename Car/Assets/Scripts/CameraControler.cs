@@ -17,7 +17,10 @@ public class Camera : MonoBehaviour
     public float mouseSensitivity = 3f;
     public float returnToCarSpeed = 2f;
     public float minPitch = 5f;
-    public float maxPitch = 80f;
+    public float maxPitch = 80f; // Limit pitch to avoid flipping
+    public float minYaw = -60f; // Minimum yaw relative to car
+    public float maxYaw = 60f;  // Maximum yaw relative to car
+    public float edgeSensitivityMultiplier = 3f; // How much to boost sensitivity at edge
 
     void LateUpdate()
     {
@@ -36,7 +39,27 @@ public class Camera : MonoBehaviour
 
         if (isDragging)
         {
-            dragYaw += Mouse.current.delta.x.ReadValue() * mouseSensitivity * Time.deltaTime;
+            float carYaw = target.eulerAngles.y;
+            float relativeYaw = Mathf.DeltaAngle(carYaw, dragYaw);
+
+            // Calculate proximity to edge (0 = center, 1 = at edge)
+            float edgeProximity = Mathf.InverseLerp(0, (maxYaw - minYaw) / 2f, Mathf.Min(Mathf.Abs(relativeYaw - minYaw), Mathf.Abs(relativeYaw - maxYaw)));
+
+            // Sensitivity boost only near the edge (e.g., last 20% of range)
+            float boostZone = 0.8f; // Start boosting when within 20% of edge
+            float edgeBoost = 1f;
+            if (edgeProximity > boostZone)
+            {
+                float boostAmount = (edgeProximity - boostZone) / (1f - boostZone);
+                edgeBoost += edgeSensitivityMultiplier * boostAmount;
+            }
+
+            // Update relative yaw
+            relativeYaw += Mouse.current.delta.x.ReadValue() * mouseSensitivity * edgeBoost * Time.deltaTime;
+            relativeYaw = Mathf.Clamp(relativeYaw, minYaw, maxYaw);
+
+            dragYaw = carYaw + relativeYaw;
+
             dragPitch -= Mouse.current.delta.y.ReadValue() * mouseSensitivity * Time.deltaTime;
             dragPitch = Mathf.Clamp(dragPitch, minPitch, maxPitch);
             currentYaw = dragYaw;

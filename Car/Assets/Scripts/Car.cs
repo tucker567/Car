@@ -49,6 +49,9 @@ public class Car : MonoBehaviour
     private InputAction moveAction;
     private InputAction unstuckAction;
 
+    [Header("Health System")]
+    public CarHealth carHealth; // Assign in Inspector or GetComponent
+
     void Start()
     {
         rigid.centerOfMass = new Vector3(0, -0.5f, 0);
@@ -62,12 +65,18 @@ public class Car : MonoBehaviour
             moveAction = playerInput.actions["Move"];
             unstuckAction = playerInput.actions.FindAction("Unstuck");
         }
+        // Add this to auto-find CarHealth if not assigned
+        if (carHealth == null)
+            carHealth = GetComponent<CarHealth>();
     }
 
     bool unstuckInProgress = false;
 
     void Update()
     {
+        // Disable controls if car is destroyed
+        if (carHealth != null && carHealth.IsDestroyed)
+            return;
 
         // Boost input (Left Shift)
         if (Keyboard.current != null)
@@ -158,9 +167,12 @@ public class Car : MonoBehaviour
         Vector3 endPos = startPos + Vector3.up * 1.5f;
         Quaternion startRot = transform.rotation;
         Quaternion endRot = Quaternion.Euler(0, transform.eulerAngles.y, 0);
+
+        // Fix: Set kinematic before moving, then set non-kinematic before setting velocity
+        rigid.isKinematic = true;
         rigid.linearVelocity = Vector3.zero;
         rigid.angularVelocity = Vector3.zero;
-        rigid.isKinematic = true;
+
         while (elapsed < duration)
         {
             float t = elapsed / duration;
@@ -171,12 +183,19 @@ public class Car : MonoBehaviour
         }
         transform.position = endPos;
         transform.rotation = endRot;
+
         rigid.isKinematic = false;
+        rigid.linearVelocity = Vector3.zero; // Now safe to set velocity
+        rigid.angularVelocity = Vector3.zero;
         unstuckInProgress = false;
     }
 
     void FixedUpdate()
     {
+        // Disable controls if car is destroyed
+        if (carHealth != null && carHealth.IsDestroyed)
+            return;
+
         // Only allow boost if at least one wheel is grounded
         bool grounded = false;
         WheelHit hit;

@@ -14,6 +14,7 @@ GameObject:
   - component: {fileID: 1936023838051967951}
   - component: {fileID: 5760650958158222177}
   - component: {fileID: 2280611208025103151}
+  - component: {fileID: 2158990106885286005}
   - component: {fileID: 4405057869381150677}
   - component: {fileID: 2510191410239446943}
   - component: {fileID: 1142471013895667572}
@@ -107,6 +108,7 @@ MonoBehaviour:
   driftTurnThreshold: 0.35
   driftAssist: 85
   engineVolume: 0.2
+  carHealth: {fileID: 2158990106885286005}
 --- !u!114 &1936023838051967951
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -235,6 +237,25 @@ MonoBehaviour:
   volume: 0.9
   albumText: {fileID: 0}
   songText: {fileID: 0}
+--- !u!114 &2158990106885286005
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 521852092362769078}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c0e8d4e587949042b3e99014a125993, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CarHealth
+  maxHealth: 100
+  healthText: {fileID: 0}
+  carRigidbody: {fileID: 6410409409001862846}
+  wheelCollider1: {fileID: 2114291455802639633}
+  wheelCollider2: {fileID: 3293548495261205058}
+  wheelCollider3: {fileID: 2414679458786513287}
+  wheelCollider4: {fileID: 4089655997578068238}
 --- !u!114 &4405057869381150677
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1057,6 +1078,7 @@ GameObject:
   - component: {fileID: 6029913364119942301}
   - component: {fileID: 6594861872246035428}
   - component: {fileID: 2451464102537546333}
+  - component: {fileID: 8088637158823521694}
   m_Layer: 8
   m_Name: Cylinder (2)
   m_TagString: Untagged
@@ -1151,6 +1173,33 @@ MonoBehaviour:
   wheelMesh: {fileID: 4349723022313589740}
   wheelTurn: 0
   steerSmoothSpeed: 8
+--- !u!54 &8088637158823521694
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3657455692427404325}
+  serializedVersion: 5
+  m_Mass: 1
+  m_LinearDamping: 0
+  m_AngularDamping: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 1
+  m_IsKinematic: 0
+  m_Interpolate: 0
+  m_Constraints: 0
+  m_CollisionDetection: 0
 --- !u!1 &4352922156005079163
 GameObject:
   m_ObjectHideFlags: 0
@@ -1515,6 +1564,7 @@ GameObject:
   - component: {fileID: 5231377546141121219}
   - component: {fileID: 1700346683892492423}
   - component: {fileID: 6683347883836983300}
+  - component: {fileID: 6302509932543697087}
   m_Layer: 8
   m_Name: Cylinder (1)
   m_TagString: Untagged
@@ -1609,6 +1659,33 @@ MonoBehaviour:
   wheelMesh: {fileID: 1345378778140341642}
   wheelTurn: 1
   steerSmoothSpeed: 8
+--- !u!54 &6302509932543697087
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7618776559969330556}
+  serializedVersion: 5
+  m_Mass: 1
+  m_LinearDamping: 0
+  m_AngularDamping: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 1
+  m_IsKinematic: 0
+  m_Interpolate: 0
+  m_Constraints: 0
+  m_CollisionDetection: 0
 --- !u!1 &8934061497169285458
 GameObject:
   m_ObjectHideFlags: 0
@@ -1621,6 +1698,7 @@ GameObject:
   - component: {fileID: 5359715571062726517}
   - component: {fileID: 1835067119552608293}
   - component: {fileID: 5840699134788993225}
+  - component: {fileID: 484561485115034801}
   m_Layer: 8
   m_Name: Cylinder
   m_TagString: Untagged
@@ -1715,6 +1793,33 @@ MonoBehaviour:
   wheelMesh: {fileID: 1100842454488198643}
   wheelTurn: 1
   steerSmoothSpeed: 8
+--- !u!54 &484561485115034801
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8934061497169285458}
+  serializedVersion: 5
+  m_Mass: 1
+  m_LinearDamping: 0
+  m_AngularDamping: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 1
+  m_IsKinematic: 0
+  m_Interpolate: 0
+  m_Constraints: 0
+  m_CollisionDetection: 0
 --- !u!1 &9049336726401764157
 GameObject:
   m_ObjectHideFlags: 0
@@ -1727,6 +1832,7 @@ GameObject:
   - component: {fileID: 5365636659210478412}
   - component: {fileID: 3897193086501164169}
   - component: {fileID: 4078598969076784123}
+  - component: {fileID: 1706932221098004766}
   m_Layer: 8
   m_Name: Cylinder (3)
   m_TagString: Untagged
@@ -1821,6 +1927,33 @@ MonoBehaviour:
   wheelMesh: {fileID: 7549747524032181688}
   wheelTurn: 0
   steerSmoothSpeed: 8
+--- !u!54 &1706932221098004766
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9049336726401764157}
+  serializedVersion: 5
+  m_Mass: 1
+  m_LinearDamping: 0
+  m_AngularDamping: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 1
+  m_IsKinematic: 0
+  m_Interpolate: 0
+  m_Constraints: 0
+  m_CollisionDetection: 0
 --- !u!1001 &1990337049813961617
 PrefabInstance:
   m_ObjectHideFlags: 0

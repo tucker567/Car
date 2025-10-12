@@ -14,7 +14,7 @@ OcclusionCullingSettings:
 RenderSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 10
-  m_Fog: 0
+  m_Fog: 1
   m_FogColor: {r: 0.9811321, g: 0.75068456, b: 0.46742615, a: 1}
   m_FogMode: 3
   m_FogDensity: 0.01
@@ -6153,9 +6153,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CarHealth
   maxHealth: 100
-  collisionDamageMultiplier: 2
-  minCollisionVelocity: 5
   healthText: {fileID: 277618485}
+  carRigidbody: {fileID: 0}
+  wheelCollider1: {fileID: 0}
+  wheelCollider2: {fileID: 0}
+  wheelCollider3: {fileID: 0}
+  wheelCollider4: {fileID: 0}
 --- !u!1 &1548306301
 GameObject:
   m_ObjectHideFlags: 0

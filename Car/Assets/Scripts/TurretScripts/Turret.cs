@@ -51,7 +51,12 @@ public class Turret : MonoBehaviour
     {
         // do nothing when no target
         if (!target) return;
-            
+
+        // Check line of sight for both mount points
+        bool clearLineOfSight = true;
+        clearLineOfSight &= IsLineOfSightClear(mountPoint1);
+        clearLineOfSight &= IsLineOfSightClear(mountPoint2);
+
         // aim target
         var aimed = true;
         if (mountPoint1 != null && !mountPoint1.Aim(target.position))
@@ -63,10 +68,28 @@ public class Turret : MonoBehaviour
             aimed = false;
         }
 
-        // shoot when aimed
-        if (aimed)
+        // shoot when aimed and line of sight is clear
+        if (aimed && clearLineOfSight)
         {
             gun.Fire();
         }
+    }
+
+    bool IsLineOfSightClear(MountPoint mountPoint)
+    {
+        if (mountPoint == null || target == null) return true;
+        var origin = mountPoint.transform.position;
+        var destination = target.position;
+        var direction = (destination - origin).normalized;
+        var distance = Vector3.Distance(origin, destination);
+
+        // Raycast only up to the target's position
+        if (Physics.Raycast(origin, direction, out RaycastHit hit, distance))
+        {
+            // Only clear if the first thing hit is the target
+            if (hit.transform != target)
+                return false;
+        }
+        return true;
     }
 }

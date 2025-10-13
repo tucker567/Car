@@ -136,7 +136,7 @@ GameObject:
   - component: {fileID: 107176148}
   - component: {fileID: 107176147}
   - component: {fileID: 107176146}
-  m_Layer: 0
+  m_Layer: 2
   m_Name: Left
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -246,7 +246,7 @@ GameObject:
   - component: {fileID: 176491353}
   - component: {fileID: 176491352}
   - component: {fileID: 176491351}
-  m_Layer: 0
+  m_Layer: 2
   m_Name: AA Turret
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -268,7 +268,7 @@ MonoBehaviour:
   shotPrefab: {fileID: 97817459362261663, guid: 03c5ba2c125a9f74ba12358d52d4d3d4, type: 3}
   gunPoint1: {fileID: 334737825}
   gunPoint2: {fileID: 1336691808}
-  fireRate: 10
+  fireRate: 2
 --- !u!114 &176491352
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -325,7 +325,7 @@ GameObject:
   - component: {fileID: 244000498}
   - component: {fileID: 244000497}
   - component: {fileID: 244000496}
-  m_Layer: 0
+  m_Layer: 2
   m_Name: Cylinder
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -342,7 +342,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 0.5, y: 1, z: 0.5}
+  m_LocalScale: {x: 0.5, y: 0.5, z: 0.5}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 176491353}
@@ -698,6 +698,117 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 277618483}
   m_CullTransparentMesh: 1
+--- !u!1 &302059552
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 302059556}
+  - component: {fileID: 302059555}
+  - component: {fileID: 302059554}
+  - component: {fileID: 302059553}
+  m_Layer: 0
+  m_Name: Cube
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!65 &302059553
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 302059552}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 1, y: 1, z: 1}
+  m_Center: {x: 0, y: 0, z: 0}
+--- !u!23 &302059554
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 302059552}
+  m_Enabled: 1
+  m_CastShadows: 1
+  m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 31321ba15b8f8eb4c954353edc038b1d, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!33 &302059555
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 302059552}
+  m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!4 &302059556
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 302059552}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: 0.30110228, z: -0, w: 0.9535919}
+  m_LocalPosition: {x: 39.31, y: 6.53, z: 22.9902}
+  m_LocalScale: {x: 10, y: 10, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 35.048, z: 0}
 --- !u!1 &330585543
 GameObject:
   m_ObjectHideFlags: 0
@@ -877,7 +988,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 334737825}
-  m_Layer: 0
+  m_Layer: 2
   m_Name: Gun Point Left
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1286,7 +1397,7 @@ GameObject:
   - component: {fileID: 577789433}
   - component: {fileID: 577789432}
   - component: {fileID: 577789431}
-  m_Layer: 0
+  m_Layer: 2
   m_Name: Base
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -6298,7 +6409,7 @@ GameObject:
   - component: {fileID: 947687409}
   - component: {fileID: 947687408}
   - component: {fileID: 947687407}
-  m_Layer: 0
+  m_Layer: 2
   m_Name: Right
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -6661,7 +6772,7 @@ Transform:
   m_GameObject: {fileID: 1254031935}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 31.44, y: 8.3, z: 35.88}
+  m_LocalPosition: {x: 45.85, y: 11.4, z: 35.88}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -6800,7 +6911,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1336691808}
-  m_Layer: 0
+  m_Layer: 2
   m_Name: Gun Point Right
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -6832,7 +6943,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1354942067}
   - component: {fileID: 1354942068}
-  m_Layer: 0
+  m_Layer: 2
   m_Name: Mount Point
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -6906,7 +7017,7 @@ GameObject:
   - component: {fileID: 1547061375}
   - component: {fileID: 1547061374}
   - component: {fileID: 1547061373}
-  m_Layer: 0
+  m_Layer: 2
   m_Name: Turret
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -6922,8 +7033,8 @@ Transform:
   m_GameObject: {fileID: 1547061371}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 1.03, z: 0}
-  m_LocalScale: {x: 0.5, y: 0.5, z: 0.8}
+  m_LocalPosition: {x: 0, y: 0.571, z: 0}
+  m_LocalScale: {x: 0.7, y: 0.7, z: 0.7}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 2127247121}
@@ -7183,7 +7294,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1752729080}
-  m_Layer: 0
+  m_Layer: 2
   m_Name: Gun Barrels
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -7297,7 +7408,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1856635244}
-  m_Layer: 0
+  m_Layer: 2
   m_Name: GameObject
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -7581,7 +7692,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2127247121}
   - component: {fileID: 2127247122}
-  m_Layer: 0
+  m_Layer: 2
   m_Name: Mount Point
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -7907,3 +8018,4 @@ SceneRoots:
   - {fileID: 1282351314}
   - {fileID: 176491353}
   - {fileID: 1254031939}
+  - {fileID: 302059556}

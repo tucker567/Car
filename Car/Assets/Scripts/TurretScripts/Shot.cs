@@ -19,6 +19,7 @@ public class Shot : MonoBehaviour
         //var muzzleEffect = Instantiate(muzzlePrefab, transform.position, transform.rotation);
         //Destroy(muzzleEffect, 5f);
         velocity = transform.forward * speed;
+        Destroy(gameObject, 7f); // Schedule destruction once
     }
 
     void FixedUpdate()
@@ -26,6 +27,7 @@ public class Shot : MonoBehaviour
         if (rb == null) return; // Prevent NullReferenceException
         var displacement = velocity * Time.deltaTime;
         rb.MovePosition(rb.position + displacement);
+        // Remove Destroy from here
     }
 
     void OnCollisionEnter(Collision other)

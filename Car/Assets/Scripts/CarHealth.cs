@@ -12,6 +12,7 @@ public class CarHealth : MonoBehaviour
     [SerializeField] WheelCollider wheelCollider3;
     [SerializeField] WheelCollider wheelCollider4;
     public bool isPlayerCar = false; // Set this in Inspector if it's the player's car
+    public BoxCollider boxCollider; // Assign in Inspector if needed
 
     float currentHealth;
     List<Rigidbody> parts = new List<Rigidbody>();
@@ -87,16 +88,15 @@ public class CarHealth : MonoBehaviour
         }
 
         // Set BoxCollider size to specific XYZ values
-        var boxCol = carRigidbody.GetComponentInChildren<BoxCollider>();
-        if (boxCol != null)
+        if (boxCollider != null)
         {
             Debug.Log("Changing BoxCollider size!");
-            boxCol.center = new Vector3(0f, 0f, 0f); // <-- Set your desired center here
-            boxCol.size = new Vector3(1f, 1f, 1f); // <-- Set your desired size here
+            boxCollider.center = new Vector3(0f, 0f, 0f); // <-- Set your desired center here
+            boxCollider.size = new Vector3(1f, 1f, 1f);   // <-- Set your desired size here
         }
         else
         {
-            Debug.LogWarning("BoxCollider not found on carRigidbody!");
+            Debug.LogWarning("BoxCollider not assigned on this car!");
         }
 
         // Remove marker if present

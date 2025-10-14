@@ -14,7 +14,7 @@ GameObject:
   - component: {fileID: 4788740217123526310}
   - component: {fileID: 4006902496968803735}
   - component: {fileID: 5555947610883439884}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: Shot
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -126,6 +126,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Shot
   speed: 50
+  damage: 25
 --- !u!54 &5555947610883439884
 Rigidbody:
   m_ObjectHideFlags: 0

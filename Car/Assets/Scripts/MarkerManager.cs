@@ -16,27 +16,31 @@ public class MarkerManager : MonoBehaviour
 
     void Update()
     {
-        if (Mouse.current.leftButton.wasPressedThisFrame) // Left click (Input System)
+        if (Mouse.current.leftButton.wasPressedThisFrame)
         {
             Ray ray = UnityEngine.Camera.main.ScreenPointToRay(Mouse.current.position.ReadValue());
             RaycastHit hit;
             if (Physics.Raycast(ray, out hit))
             {
-                // Check if the hit object is an AI car (tag or component)
                 if (hit.collider.CompareTag("AICar"))
                 {
-                    Transform car = hit.collider.transform;
+                    // Always get the root transform with CarHealth
+                    Transform car = hit.collider.GetComponentInParent<CarHealth>()?.transform;
+                    if (car == null) return;
+
+                    var carHealth = car.GetComponent<CarHealth>();
+                    if (carHealth != null && carHealth.IsDestroyed)
+                    {
+                        RemoveMarker(car);
+                        return;
+                    }
+
                     if (carMarkers.ContainsKey(car))
                     {
-                        // Remove marker if it exists
-                        Destroy(carMarkers[car]);
-                        carMarkers.Remove(car);
-                        markerOrder.Remove(car);
-                        UpdateMarkerOrders();
+                        RemoveMarker(car);
                     }
                     else
                     {
-                        // Place new marker
                         GameObject markerObj = Instantiate(markerPrefab, canvas.transform);
                         SimpleCarMarker marker = markerObj.GetComponent<SimpleCarMarker>();
                         if (marker == null)
@@ -52,6 +56,29 @@ public class MarkerManager : MonoBehaviour
                     }
                 }
             }
+        }
+
+        // Remove markers from cars that have died
+        for (int i = markerOrder.Count - 1; i >= 0; i--)
+        {
+            Transform car = markerOrder[i];
+            var carHealth = car.GetComponent<CarHealth>();
+            if (carHealth != null && carHealth.IsDestroyed)
+            {
+                RemoveMarker(car);
+            }
+        }
+    }
+
+    void FixedUpdate()
+    {
+        foreach (var car in markerOrder)
+        {
+            var carHealth = car.GetComponent<CarHealth>();
+            if (carHealth != null && carHealth.IsDestroyed)
+                return; // Stop all logic if dead
+
+            // ...rest of AI logic...
         }
     }
 
@@ -77,5 +104,16 @@ public class MarkerManager : MonoBehaviour
                 }
             }
         }
+    }
+
+    public void RemoveMarker(Transform car)
+    {
+        if (carMarkers.ContainsKey(car))
+        {
+            Destroy(carMarkers[car]);
+            carMarkers.Remove(car);
+        }
+        markerOrder.Remove(car);
+        UpdateMarkerOrders();
     }
 }

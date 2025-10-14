@@ -162,6 +162,8 @@ public class Turret : MonoBehaviour
     bool IsValidTarget(Transform car)
     {
         if (car == null) return false;
+        var carHealth = car.GetComponent<CarHealth>();
+        if (carHealth == null || carHealth.IsDestroyed) return false; // Don't target destroyed cars
         float dist = Vector3.Distance(transform.position, car.position);
         if (dist > maxRange) return false;
         bool fov1 = mountPoint1 == null || Vector3.Angle(mountPoint1.transform.forward, car.position - mountPoint1.transform.position) <= mountPoint1.angleLimit / 2;

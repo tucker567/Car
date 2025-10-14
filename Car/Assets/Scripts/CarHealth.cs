@@ -21,6 +21,7 @@ public class CarHealth : MonoBehaviour
     {
         currentHealth = maxHealth;
         parts.Clear();
+        // In Awake(), this already finds all child Rigidbodies (including wheels if set up right)
         foreach (var rb in GetComponentsInChildren<Rigidbody>())
         {
             if (rb.gameObject != this.gameObject)
@@ -64,10 +65,26 @@ public class CarHealth : MonoBehaviour
         if (carRigidbody != null)
             carRigidbody.isKinematic = false;
 
-        if (wheelCollider1 != null) wheelCollider1.enabled = false;
-        if (wheelCollider2 != null) wheelCollider2.enabled = false;
-        if (wheelCollider3 != null) wheelCollider3.enabled = false;
-        if (wheelCollider4 != null) wheelCollider4.enabled = false;
+        if (wheelCollider1 != null)
+        {
+            wheelCollider1.enabled = false;
+            wheelCollider1.transform.SetParent(null); // Unparent
+        }
+        if (wheelCollider2 != null)
+        {
+            wheelCollider2.enabled = false;
+            wheelCollider2.transform.SetParent(null); // Unparent
+        }
+        if (wheelCollider3 != null)
+        {
+            wheelCollider3.enabled = false;
+            wheelCollider3.transform.SetParent(null); // Unparent
+        }
+        if (wheelCollider4 != null)
+        {
+            wheelCollider4.enabled = false;
+            wheelCollider4.transform.SetParent(null); // Unparent
+        }
 
         // Set BoxCollider size to specific XYZ values
         var boxCol = carRigidbody.GetComponentInChildren<BoxCollider>();
@@ -80,6 +97,20 @@ public class CarHealth : MonoBehaviour
         else
         {
             Debug.LogWarning("BoxCollider not found on carRigidbody!");
+        }
+
+        // Remove marker if present
+        var markerManager = Object.FindAnyObjectByType<MarkerManager>();
+        if (markerManager != null)
+        {
+            markerManager.RemoveMarker(transform);
+        }
+
+        // Disable AiCar script if present
+        var aiCar = GetComponent<AiCar>();
+        if (aiCar != null)
+        {
+            aiCar.enabled = false;
         }
     }
 

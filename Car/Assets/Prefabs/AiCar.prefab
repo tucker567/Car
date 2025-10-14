@@ -397,7 +397,7 @@ GameObject:
   - component: {fileID: 3293548495261205058}
   m_Layer: 9
   m_Name: FrontRightWheelCol
-  m_TagString: Untagged
+  m_TagString: AICar
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -649,7 +649,7 @@ GameObject:
   - component: {fileID: 7549747524032181688}
   m_Layer: 9
   m_Name: BackRightWheel
-  m_TagString: Untagged
+  m_TagString: AICar
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -5700,6 +5700,7 @@ GameObject:
   - component: {fileID: 6029913364119942301}
   - component: {fileID: 6594861872246035428}
   - component: {fileID: 2451464102537546333}
+  - component: {fileID: 4658154792556448044}
   m_Layer: 9
   m_Name: Cylinder (2)
   m_TagString: Untagged
@@ -5794,6 +5795,33 @@ MonoBehaviour:
   wheelMesh: {fileID: 4349723022313589740}
   wheelTurn: 0
   steerSmoothSpeed: 8
+--- !u!54 &4658154792556448044
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3657455692427404325}
+  serializedVersion: 5
+  m_Mass: 1
+  m_LinearDamping: 0
+  m_AngularDamping: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 1
+  m_IsKinematic: 0
+  m_Interpolate: 0
+  m_Constraints: 0
+  m_CollisionDetection: 0
 --- !u!1 &4352922156005079163
 GameObject:
   m_ObjectHideFlags: 0
@@ -5806,7 +5834,7 @@ GameObject:
   - component: {fileID: 2414679458786513287}
   m_Layer: 9
   m_Name: BackLeftWheelCol
-  m_TagString: Untagged
+  m_TagString: AICar
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -5878,7 +5906,7 @@ GameObject:
   - component: {fileID: 267968818246662573}
   m_Layer: 9
   m_Name: Wheels
-  m_TagString: Untagged
+  m_TagString: AICar
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -5918,7 +5946,7 @@ GameObject:
   - component: {fileID: 2114291455802639633}
   m_Layer: 9
   m_Name: FrontLeftWheelCol
-  m_TagString: Untagged
+  m_TagString: AICar
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -5988,7 +6016,7 @@ GameObject:
   - component: {fileID: 1100842454488198643}
   m_Layer: 9
   m_Name: FrontLeftWheel
-  m_TagString: Untagged
+  m_TagString: AICar
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -6020,7 +6048,7 @@ GameObject:
   - component: {fileID: 1345378778140341642}
   m_Layer: 9
   m_Name: FrontRightWheel
-  m_TagString: Untagged
+  m_TagString: AICar
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -10888,7 +10916,7 @@ GameObject:
   - component: {fileID: 4349723022313589740}
   m_Layer: 9
   m_Name: BackLeftWheel
-  m_TagString: Untagged
+  m_TagString: AICar
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -10921,7 +10949,7 @@ GameObject:
   - component: {fileID: 4089655997578068238}
   m_Layer: 9
   m_Name: BackRightWheelCol
-  m_TagString: Untagged
+  m_TagString: AICar
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -10994,6 +11022,7 @@ GameObject:
   - component: {fileID: 5231377546141121219}
   - component: {fileID: 1700346683892492423}
   - component: {fileID: 6683347883836983300}
+  - component: {fileID: 2628690705614912231}
   m_Layer: 9
   m_Name: Cylinder (1)
   m_TagString: Untagged
@@ -11088,6 +11117,33 @@ MonoBehaviour:
   wheelMesh: {fileID: 1345378778140341642}
   wheelTurn: 1
   steerSmoothSpeed: 8
+--- !u!54 &2628690705614912231
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7618776559969330556}
+  serializedVersion: 5
+  m_Mass: 1
+  m_LinearDamping: 0
+  m_AngularDamping: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 1
+  m_IsKinematic: 0
+  m_Interpolate: 0
+  m_Constraints: 0
+  m_CollisionDetection: 0
 --- !u!1 &8934061497169285458
 GameObject:
   m_ObjectHideFlags: 0
@@ -11100,6 +11156,7 @@ GameObject:
   - component: {fileID: 5359715571062726517}
   - component: {fileID: 1835067119552608293}
   - component: {fileID: 5840699134788993225}
+  - component: {fileID: 5615775713545877642}
   m_Layer: 9
   m_Name: Cylinder
   m_TagString: Untagged
@@ -11194,6 +11251,33 @@ MonoBehaviour:
   wheelMesh: {fileID: 1100842454488198643}
   wheelTurn: 1
   steerSmoothSpeed: 8
+--- !u!54 &5615775713545877642
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8934061497169285458}
+  serializedVersion: 5
+  m_Mass: 1
+  m_LinearDamping: 0
+  m_AngularDamping: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 1
+  m_IsKinematic: 0
+  m_Interpolate: 0
+  m_Constraints: 0
+  m_CollisionDetection: 0
 --- !u!1 &9049336726401764157
 GameObject:
   m_ObjectHideFlags: 0
@@ -11206,6 +11290,7 @@ GameObject:
   - component: {fileID: 5365636659210478412}
   - component: {fileID: 3897193086501164169}
   - component: {fileID: 4078598969076784123}
+  - component: {fileID: 7239289388599429692}
   m_Layer: 9
   m_Name: Cylinder (3)
   m_TagString: Untagged
@@ -11300,3 +11385,30 @@ MonoBehaviour:
   wheelMesh: {fileID: 7549747524032181688}
   wheelTurn: 0
   steerSmoothSpeed: 8
+--- !u!54 &7239289388599429692
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9049336726401764157}
+  serializedVersion: 5
+  m_Mass: 1
+  m_LinearDamping: 0
+  m_AngularDamping: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 1
+  m_IsKinematic: 0
+  m_Interpolate: 0
+  m_Constraints: 0
+  m_CollisionDetection: 0

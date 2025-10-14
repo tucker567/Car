@@ -39,6 +39,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
+  - {fileID: 4652002139571224873}
   - {fileID: 1447689892081721952}
   - {fileID: 267968818246662573}
   m_Father: {fileID: 0}
@@ -108,7 +109,7 @@ MonoBehaviour:
   driftTurnThreshold: 0.35
   driftAssist: 85
   engineVolume: 0.2
-  carHealth: {fileID: 2158990106885286005}
+  carHealth: {fileID: 0}
 --- !u!114 &1936023838051967951
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -256,6 +257,7 @@ MonoBehaviour:
   wheelCollider2: {fileID: 3293548495261205058}
   wheelCollider3: {fileID: 2414679458786513287}
   wheelCollider4: {fileID: 4089655997578068238}
+  isPlayerCar: 0
 --- !u!114 &4405057869381150677
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -611,7 +613,7 @@ GameObject:
   - component: {fileID: 3293548495261205058}
   m_Layer: 8
   m_Name: FrontRightWheelCol
-  m_TagString: Untagged
+  m_TagString: playerCar
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -863,7 +865,7 @@ GameObject:
   - component: {fileID: 7549747524032181688}
   m_Layer: 8
   m_Name: BackRightWheel
-  m_TagString: Untagged
+  m_TagString: playerCar
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -1078,7 +1080,7 @@ GameObject:
   - component: {fileID: 6029913364119942301}
   - component: {fileID: 6594861872246035428}
   - component: {fileID: 2451464102537546333}
-  - component: {fileID: 8088637158823521694}
+  - component: {fileID: 8173879572923458564}
   m_Layer: 8
   m_Name: Cylinder (2)
   m_TagString: Untagged
@@ -1173,7 +1175,7 @@ MonoBehaviour:
   wheelMesh: {fileID: 4349723022313589740}
   wheelTurn: 0
   steerSmoothSpeed: 8
---- !u!54 &8088637158823521694
+--- !u!54 &8173879572923458564
 Rigidbody:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1212,7 +1214,7 @@ GameObject:
   - component: {fileID: 2414679458786513287}
   m_Layer: 8
   m_Name: BackLeftWheelCol
-  m_TagString: Untagged
+  m_TagString: playerCar
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -1324,7 +1326,7 @@ GameObject:
   - component: {fileID: 2114291455802639633}
   m_Layer: 8
   m_Name: FrontLeftWheelCol
-  m_TagString: Untagged
+  m_TagString: playerCar
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -1394,7 +1396,7 @@ GameObject:
   - component: {fileID: 1100842454488198643}
   m_Layer: 8
   m_Name: FrontLeftWheel
-  m_TagString: Untagged
+  m_TagString: playerCar
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -1426,7 +1428,7 @@ GameObject:
   - component: {fileID: 1345378778140341642}
   m_Layer: 8
   m_Name: FrontRightWheel
-  m_TagString: Untagged
+  m_TagString: playerCar
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -1458,7 +1460,7 @@ GameObject:
   - component: {fileID: 4349723022313589740}
   m_Layer: 8
   m_Name: BackLeftWheel
-  m_TagString: Untagged
+  m_TagString: playerCar
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -1491,7 +1493,7 @@ GameObject:
   - component: {fileID: 4089655997578068238}
   m_Layer: 8
   m_Name: BackRightWheelCol
-  m_TagString: Untagged
+  m_TagString: playerCar
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -1564,7 +1566,7 @@ GameObject:
   - component: {fileID: 5231377546141121219}
   - component: {fileID: 1700346683892492423}
   - component: {fileID: 6683347883836983300}
-  - component: {fileID: 6302509932543697087}
+  - component: {fileID: 5088921864800401565}
   m_Layer: 8
   m_Name: Cylinder (1)
   m_TagString: Untagged
@@ -1659,7 +1661,7 @@ MonoBehaviour:
   wheelMesh: {fileID: 1345378778140341642}
   wheelTurn: 1
   steerSmoothSpeed: 8
---- !u!54 &6302509932543697087
+--- !u!54 &5088921864800401565
 Rigidbody:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1698,7 +1700,7 @@ GameObject:
   - component: {fileID: 5359715571062726517}
   - component: {fileID: 1835067119552608293}
   - component: {fileID: 5840699134788993225}
-  - component: {fileID: 484561485115034801}
+  - component: {fileID: 5966521718379882547}
   m_Layer: 8
   m_Name: Cylinder
   m_TagString: Untagged
@@ -1793,7 +1795,7 @@ MonoBehaviour:
   wheelMesh: {fileID: 1100842454488198643}
   wheelTurn: 1
   steerSmoothSpeed: 8
---- !u!54 &484561485115034801
+--- !u!54 &5966521718379882547
 Rigidbody:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1832,7 +1834,7 @@ GameObject:
   - component: {fileID: 5365636659210478412}
   - component: {fileID: 3897193086501164169}
   - component: {fileID: 4078598969076784123}
-  - component: {fileID: 1706932221098004766}
+  - component: {fileID: 2383899898456454524}
   m_Layer: 8
   m_Name: Cylinder (3)
   m_TagString: Untagged
@@ -1927,7 +1929,7 @@ MonoBehaviour:
   wheelMesh: {fileID: 7549747524032181688}
   wheelTurn: 0
   steerSmoothSpeed: 8
---- !u!54 &1706932221098004766
+--- !u!54 &2383899898456454524
 Rigidbody:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -2175,4 +2177,78 @@ ParticleSystem:
 Transform:
   m_CorrespondingSourceObject: {fileID: 6443147462476216183, guid: 9dfc1a47150a37842b45f3f0396a7096, type: 3}
   m_PrefabInstance: {fileID: 7711144244810662454}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &7983587942379610607
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 4672444582964679318}
+    m_Modifications:
+    - target: {fileID: 2355707238715684814, guid: 48a69a058a9789e47b9be181e8bf9d92, type: 3}
+      propertyPath: angleLimit
+      value: 360
+      objectReference: {fileID: 0}
+    - target: {fileID: 3333892579444973766, guid: 48a69a058a9789e47b9be181e8bf9d92, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3333892579444973766, guid: 48a69a058a9789e47b9be181e8bf9d92, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0.459
+      objectReference: {fileID: 0}
+    - target: {fileID: 3333892579444973766, guid: 48a69a058a9789e47b9be181e8bf9d92, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3333892579444973766, guid: 48a69a058a9789e47b9be181e8bf9d92, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3333892579444973766, guid: 48a69a058a9789e47b9be181e8bf9d92, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3333892579444973766, guid: 48a69a058a9789e47b9be181e8bf9d92, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3333892579444973766, guid: 48a69a058a9789e47b9be181e8bf9d92, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3333892579444973766, guid: 48a69a058a9789e47b9be181e8bf9d92, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3333892579444973766, guid: 48a69a058a9789e47b9be181e8bf9d92, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3333892579444973766, guid: 48a69a058a9789e47b9be181e8bf9d92, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8018269217759853281, guid: 48a69a058a9789e47b9be181e8bf9d92, type: 3}
+      propertyPath: m_Name
+      value: AA Turret
+      objectReference: {fileID: 0}
+    - target: {fileID: 9139815001744443672, guid: 48a69a058a9789e47b9be181e8bf9d92, type: 3}
+      propertyPath: target
+      value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 9139815001744443672, guid: 48a69a058a9789e47b9be181e8bf9d92, type: 3}
+      propertyPath: isPlayerTurret
+      value: 1
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 48a69a058a9789e47b9be181e8bf9d92, type: 3}
+--- !u!4 &4652002139571224873 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 3333892579444973766, guid: 48a69a058a9789e47b9be181e8bf9d92, type: 3}
+  m_PrefabInstance: {fileID: 7983587942379610607}
   m_PrefabAsset: {fileID: 0}

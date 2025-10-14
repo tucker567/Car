@@ -29,6 +29,14 @@ public class AiCar : MonoBehaviour
     public Transform playerCar; // Assign this from your AI manager or inspector
     public float flipRecoveryDistance = 40f; // Minimum distance from player to flip
 
+    private float flipTimer = 0f;
+    private CarHealth carHealth; // Add this
+
+    void Awake()
+    {
+        carHealth = GetComponent<CarHealth>(); // Get reference
+    }
+
     void Start()
     {
         rigid.centerOfMass = new Vector3(0, -0.5f, 0);
@@ -62,6 +70,10 @@ public class AiCar : MonoBehaviour
 
     void FixedUpdate()
     {
+        if (carHealth != null && carHealth.IsDestroyed)
+            return; // Stop all logic if dead
+
+
         float speed = rigid.linearVelocity.magnitude;
 
         // Motor torque logic
@@ -143,7 +155,4 @@ public class AiCar : MonoBehaviour
             flipTimer = 0f;
         }
     }
-
-    // Add this field to the class:
-    private float flipTimer = 0f;
 }

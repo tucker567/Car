@@ -11,6 +11,7 @@ public class CarHealth : MonoBehaviour
     [SerializeField] WheelCollider wheelCollider2;
     [SerializeField] WheelCollider wheelCollider3;
     [SerializeField] WheelCollider wheelCollider4;
+    public bool isPlayerCar = false; // Set this in Inspector if it's the player's car
 
     float currentHealth;
     List<Rigidbody> parts = new List<Rigidbody>();
@@ -25,10 +26,13 @@ public class CarHealth : MonoBehaviour
             if (rb.gameObject != this.gameObject)
             {
                 rb.isKinematic = true;
-                parts.Add(rb); // Add to parts list!
+                parts.Add(rb);
             }
         }
-        UpdateHealthUI();
+        if (isPlayerCar)
+            UpdateHealthUI();
+        else if (healthText != null)
+            healthText.gameObject.SetActive(false); // Disable health text for AI
     }
 
     public void TakeDamage(float amount)
@@ -81,6 +85,7 @@ public class CarHealth : MonoBehaviour
 
     void UpdateHealthUI()
     {
+        if (!isPlayerCar) return; // Only update for player car
         if (healthText != null)
             healthText.text = $"Health: {Mathf.Max(0, Mathf.RoundToInt(currentHealth))}";
     }

@@ -12,6 +12,7 @@ public class MarkerManager : MonoBehaviour
     // Track markers by car transform
     private Dictionary<Transform, GameObject> carMarkers = new Dictionary<Transform, GameObject>();
     private List<Transform> markerOrder = new List<Transform>(); // Oldest to newest
+    public IReadOnlyList<Transform> MarkerOrder => markerOrder;
 
     void Update()
     {

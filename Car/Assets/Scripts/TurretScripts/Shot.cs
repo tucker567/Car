@@ -2,9 +2,8 @@ using UnityEngine;
 
 public class Shot : MonoBehaviour
 {
-    //public GameObject hitPrefab; // Effect to spawn on hit
-    //public GameObject muzzlePrefab; // Effect to spawn at the muzzle
     public float speed;
+    public float damage = 25f; // Add a damage value
 
     Rigidbody rb;
     Vector3 velocity;
@@ -18,8 +17,6 @@ public class Shot : MonoBehaviour
 
     void Start()
     {
-        //var muzzleEffect = Instantiate(muzzlePrefab, transform.position, transform.rotation);
-        //Destroy(muzzleEffect, 5f);
         velocity = transform.forward * speed;
         Destroy(gameObject, 3f); // Schedule destruction once
     }
@@ -29,13 +26,16 @@ public class Shot : MonoBehaviour
         if (rb == null) return; // Prevent NullReferenceException
         var displacement = velocity * Time.deltaTime;
         rb.MovePosition(rb.position + displacement);
-        // Remove Destroy from here
     }
 
     void OnCollisionEnter(Collision other)
     {
-        //var hitEffect = Instantiate(hitPrefab, other.GetContact(0).point, Quaternion.identity);
-        //Destroy(hitEffect, 5f);
+        // Deal damage if the hit object has CarHealth
+        var carHealth = other.collider.GetComponentInParent<CarHealth>();
+        if (carHealth != null && !carHealth.IsDestroyed)
+        {
+            carHealth.TakeDamage(damage);
+        }
         Destroy(gameObject);
     }
 }

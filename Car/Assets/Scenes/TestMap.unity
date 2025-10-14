@@ -119,11 +119,6 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
---- !u!1 &62205032 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 521852092362769078, guid: 2edd037cc8af6a849b0da7d2d746c63a, type: 3}
-  m_PrefabInstance: {fileID: 493437117438554227}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &107176144
 GameObject:
   m_ObjectHideFlags: 0
@@ -285,6 +280,7 @@ MonoBehaviour:
   mountPoint1: {fileID: 1354942068}
   mountPoint2: {fileID: 2127247122}
   target: {fileID: 1254031939}
+  maxRange: 50
 --- !u!4 &176491353
 Transform:
   m_ObjectHideFlags: 0
@@ -6986,25 +6982,6 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 4672444582964679318, guid: 2edd037cc8af6a849b0da7d2d746c63a, type: 3}
   m_PrefabInstance: {fileID: 493437117438554227}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &1434297663
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 62205032}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7c0e8d4e587949042b3e99014a125993, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::CarHealth
-  maxHealth: 100
-  healthText: {fileID: 277618485}
-  carRigidbody: {fileID: 0}
-  wheelCollider1: {fileID: 0}
-  wheelCollider2: {fileID: 0}
-  wheelCollider3: {fileID: 0}
-  wheelCollider4: {fileID: 0}
 --- !u!1 &1547061371
 GameObject:
   m_ObjectHideFlags: 0
@@ -7742,6 +7719,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Car
       objectReference: {fileID: 0}
+    - target: {fileID: 2158990106885286005, guid: 2edd037cc8af6a849b0da7d2d746c63a, type: 3}
+      propertyPath: healthText
+      value: 
+      objectReference: {fileID: 277618485}
     - target: {fileID: 2280611208025103151, guid: 2edd037cc8af6a849b0da7d2d746c63a, type: 3}
       propertyPath: songText
       value: 
@@ -7757,7 +7738,7 @@ PrefabInstance:
     - target: {fileID: 3933268957075175776, guid: 2edd037cc8af6a849b0da7d2d746c63a, type: 3}
       propertyPath: carHealth
       value: 
-      objectReference: {fileID: 1434297663}
+      objectReference: {fileID: 0}
     - target: {fileID: 4672444582964679318, guid: 2edd037cc8af6a849b0da7d2d746c63a, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -7822,9 +7803,6 @@ PrefabInstance:
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 521852092362769078, guid: 2edd037cc8af6a849b0da7d2d746c63a, type: 3}
-      insertIndex: 6
-      addedObject: {fileID: 1434297663}
     - targetCorrespondingSourceObject: {fileID: 8934061497169285458, guid: 2edd037cc8af6a849b0da7d2d746c63a, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1915547719}

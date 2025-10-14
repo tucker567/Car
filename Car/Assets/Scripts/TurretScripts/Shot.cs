@@ -12,6 +12,8 @@ public class Shot : MonoBehaviour
     void Awake()
     {
         TryGetComponent(out rb);
+        if (rb != null)
+            rb.useGravity = false; // Disable gravity for the bullet
     }
 
     void Start()
@@ -19,7 +21,7 @@ public class Shot : MonoBehaviour
         //var muzzleEffect = Instantiate(muzzlePrefab, transform.position, transform.rotation);
         //Destroy(muzzleEffect, 5f);
         velocity = transform.forward * speed;
-        Destroy(gameObject, 7f); // Schedule destruction once
+        Destroy(gameObject, 3f); // Schedule destruction once
     }
 
     void FixedUpdate()

@@ -125,7 +125,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b78f3bc71ed772440b1ea7ff02d76524, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Shot
-  speed: 100
+  speed: 50
 --- !u!54 &5555947610883439884
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -134,7 +134,7 @@ Rigidbody:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 97817459362261663}
   serializedVersion: 5
-  m_Mass: 0.0000001
+  m_Mass: 0.01
   m_LinearDamping: 0
   m_AngularDamping: 0.05
   m_CenterOfMass: {x: 0, y: 0, z: 0}

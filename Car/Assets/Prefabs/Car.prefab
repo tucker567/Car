@@ -258,6 +258,7 @@ MonoBehaviour:
   wheelCollider3: {fileID: 2414679458786513287}
   wheelCollider4: {fileID: 4089655997578068238}
   isPlayerCar: 0
+  boxCollider: {fileID: 0}
 --- !u!114 &4405057869381150677
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2233,6 +2234,10 @@ PrefabInstance:
     - target: {fileID: 8018269217759853281, guid: 48a69a058a9789e47b9be181e8bf9d92, type: 3}
       propertyPath: m_Name
       value: AA Turret
+      objectReference: {fileID: 0}
+    - target: {fileID: 8018269217759853281, guid: 48a69a058a9789e47b9be181e8bf9d92, type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 9139815001744443672, guid: 48a69a058a9789e47b9be181e8bf9d92, type: 3}
       propertyPath: target

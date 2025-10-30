@@ -4,6 +4,7 @@ public class AiFolowCar : MonoBehaviour
 {
     public Transform playerCar;
     public AiCar aiCar;
+    public CarHealth CarHealth;
     public float sideOffset = 3f;
     private bool driveOnLeft = true;
     public float followDistance = 2f;
@@ -29,8 +30,6 @@ public class AiFolowCar : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (playerCar == null || aiCar == null) return;
-
         float aiSpeed = aiCar.rigid.linearVelocity.magnitude;
         float distanceToPlayer = Vector3.Distance(aiCar.transform.position, playerCar.position);
 

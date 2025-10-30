@@ -106,11 +106,16 @@ public class CarHealth : MonoBehaviour
             markerManager.RemoveMarker(transform);
         }
 
-        // Disable AiCar script if present
+        // Disable AiCar and AiFollowCar script if present
         var aiCar = GetComponent<AiCar>();
         if (aiCar != null)
         {
             aiCar.enabled = false;
+        }
+        var aiFolowCar = GetComponent<AiFolowCar>();
+        if (aiFolowCar != null)
+        {
+            aiFolowCar.enabled = false;
         }
     }
 
@@ -124,5 +129,10 @@ public class CarHealth : MonoBehaviour
     public bool IsDestroyed
     {
         get { return destroyed; }
+    }
+
+    public float CurrentHealth
+    {
+        get { return currentHealth; }
     }
 }

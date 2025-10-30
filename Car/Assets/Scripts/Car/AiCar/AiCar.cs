@@ -70,10 +70,6 @@ public class AiCar : MonoBehaviour
 
     void FixedUpdate()
     {
-        if (carHealth != null && carHealth.IsDestroyed)
-            return; // Stop all logic if dead
-
-
         float speed = rigid.linearVelocity.magnitude;
 
         // Motor torque logic

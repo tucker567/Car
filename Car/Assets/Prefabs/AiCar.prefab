@@ -179,7 +179,7 @@ MonoBehaviour:
   wheelCollider2: {fileID: 3293548495261205058}
   wheelCollider3: {fileID: 2414679458786513287}
   wheelCollider4: {fileID: 4089655997578068238}
-  isPlayerCar: 1
+  isPlayerCar: 0
   boxCollider: {fileID: 2410794847068953059}
 --- !u!82 &2510191410239446943
 AudioSource:

@@ -7,7 +7,6 @@ public class MarkerManager : MonoBehaviour
 {
     public GameObject markerPrefab; // Assign your marker UI prefab in Inspector
     public Canvas canvas; // Assign your Canvas in Inspector
-    public GameObject originalMarker; // Assign your original marker in Inspector
 
     // Track markers by car transform
     private Dictionary<Transform, GameObject> carMarkers = new Dictionary<Transform, GameObject>();
@@ -18,43 +17,78 @@ public class MarkerManager : MonoBehaviour
     {
         if (Mouse.current.leftButton.wasPressedThisFrame)
         {
+            Debug.Log("Mouse clicked, attempting to cast ray...");
             Ray ray = UnityEngine.Camera.main.ScreenPointToRay(Mouse.current.position.ReadValue());
             RaycastHit hit;
             if (Physics.Raycast(ray, out hit))
             {
-                if (hit.collider.CompareTag("AICar"))
+                Debug.Log($"Raycast hit: {hit.collider.name}, Tag: {hit.collider.tag}");
+                
+                // Try to find CarHealth component regardless of tag
+                Transform car = hit.collider.GetComponentInParent<CarHealth>()?.transform;
+                if (car != null)
                 {
-                    // Always get the root transform with CarHealth
-                    Transform car = hit.collider.GetComponentInParent<CarHealth>()?.transform;
-                    if (car == null) return;
-
+                    Debug.Log($"Found car with CarHealth: {car.name}");
                     var carHealth = car.GetComponent<CarHealth>();
-                    if (carHealth != null && carHealth.IsDestroyed)
+                    
+                    // Only proceed if it's not the player car
+                    if (carHealth != null && !carHealth.isPlayerCar)
                     {
-                        RemoveMarker(car);
-                        return;
-                    }
-
-                    if (carMarkers.ContainsKey(car))
-                    {
-                        RemoveMarker(car);
-                    }
-                    else
-                    {
-                        GameObject markerObj = Instantiate(markerPrefab, canvas.transform);
-                        SimpleCarMarker marker = markerObj.GetComponent<SimpleCarMarker>();
-                        if (marker == null)
+                        if (carHealth.IsDestroyed)
                         {
-                            Debug.LogError("SimpleCarMarker script missing on markerPrefab!");
+                            Debug.Log("Car is already destroyed, removing marker");
+                            RemoveMarker(car);
                             return;
                         }
-                        marker.target = car;
-                        carMarkers[car] = markerObj;
-                        markerOrder.Add(car);
-                        HideOriginalMarker();
-                        UpdateMarkerOrders();
+
+                        if (carMarkers.ContainsKey(car))
+                        {
+                            Debug.Log("Removing existing marker for car: " + car.name);
+                            RemoveMarker(car);
+                        }
+                        else
+                        {
+                            Debug.Log("Creating new marker for car: " + car.name);
+                            if (markerPrefab == null)
+                            {
+                                Debug.LogError("MarkerPrefab is not assigned in MarkerManager!");
+                                return;
+                            }
+                            if (canvas == null)
+                            {
+                                Debug.LogError("Canvas is not assigned in MarkerManager!");
+                                return;
+                            }
+                            GameObject markerObj = Instantiate(markerPrefab, canvas.transform);
+                            SimpleCarMarker marker = markerObj.GetComponent<SimpleCarMarker>();
+                            if (marker == null)
+                            {
+                                Debug.LogError("SimpleCarMarker script missing on markerPrefab!");
+                                return;
+                            }
+                            
+                            // Use Initialize method to set target immediately
+                            marker.Initialize(car);
+                            Debug.Log($"Marker initialized for {car.name}. Target is now: {marker.target?.name ?? "NULL"}");
+                            carMarkers[car] = markerObj;
+                            markerOrder.Add(car);
+                            UpdateMarkerOrders();
+                            Debug.Log($"Successfully created marker for {car.name}. Total markers: {carMarkers.Count}");
+                        }
+                    }
+                    else if (carHealth != null && carHealth.isPlayerCar)
+                    {
+                        Debug.Log("Cannot mark player car");
                     }
                 }
+                else
+                {
+                    Debug.Log($"Hit object does not have CarHealth component. Name: {hit.collider.name}");
+                }
+            }
+            else
+            {
+                Debug.Log("Raycast did not hit anything");
             }
         }
 
@@ -82,13 +116,6 @@ public class MarkerManager : MonoBehaviour
         }
     }
 
-    void HideOriginalMarker()
-    {
-        if (originalMarker != null)
-        {
-            originalMarker.SetActive(false);
-        }
-    }
 
     void UpdateMarkerOrders()
     {

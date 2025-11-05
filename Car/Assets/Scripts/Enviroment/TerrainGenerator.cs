@@ -3,24 +3,28 @@ using UnityEngine;
 public class TerrainGenerator : MonoBehaviour
 {
     [Header("Terrain Settings")]
-    public int depth = 20;
-    public int width = 256;
-    public int height = 256;
-    public float scale = 20f;
+    public int depth = 200;  // Increased height range for taller dunes
+    public int width = 512;  // Heightmap resolution
+    public int height = 512; // Heightmap resolution
+    public float scale = 0.8f;  // Much smaller scale = bigger spacing between dunes
     public bool useRandomSeed = true;
     public int seed = 0;
     
+    [Header("Terrain World Size")]
+    public float terrainWidth = 2000f;  // Actual world width
+    public float terrainLength = 2000f; // Actual world length
+    
     [Header("Sand Dune Settings")]
     [Range(1, 8)]
-    public int octaves = 4;
+    public int octaves = 3;  // Reduced for smoother, larger features
     [Range(0f, 1f)]
-    public float persistence = 0.5f;
+    public float persistence = 0.4f;  // Lower for smoother transitions
     [Range(1f, 4f)]
-    public float lacunarity = 2f;
-    [Range(0f, 1f)]
-    public float duneHeight = 0.3f;
+    public float lacunarity = 2f; // Standard value, not too jagged
+    [Range(0f, 3f)]
+    public float duneHeight = 1.8f;  // Much taller dunes
     [Range(0f, 2f)]
-    public float windDirection = 0.3f; // Creates asymmetrical dunes
+    public float windDirection = 0.3f; // Creates asymmetrical dunes, increasing it makes windward side gentler
     [Range(0.1f, 3f)]
     public float duneStretch = 1.5f; // Elongates dunes in wind direction
     
@@ -51,7 +55,8 @@ public class TerrainGenerator : MonoBehaviour
     {
         terrainData.heightmapResolution = width + 1;
 
-        terrainData.size = new Vector3(width, depth, height);
+        // Set the actual world size of the terrain (not the resolution!)
+        terrainData.size = new Vector3(terrainWidth, depth, terrainLength);
 
         terrainData.SetHeights(0, 0, GenerateHeights());
 

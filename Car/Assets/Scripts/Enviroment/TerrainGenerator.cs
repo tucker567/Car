@@ -3,42 +3,47 @@ using UnityEngine;
 public class TerrainGenerator : MonoBehaviour
 {
     [Header("Terrain Settings")]
-    public int depth = 200;  // Increased height range for taller dunes
-    public int width = 512;  // Heightmap resolution
-    public int height = 512; // Heightmap resolution
-    public float scale = 0.8f;  // Much smaller scale = bigger spacing between dunes
+    public int depth = 20;  // Increased height range for taller dunes
+    public int width = 256;  // Heightmap resolution
+    public int height = 256; // Heightmap resolution
+    public float scale = 8f;  // Much smaller scale = bigger spacing between dunes
     public bool useRandomSeed = true;
     public int seed = 0;
     
     [Header("Terrain World Size")]
-    public float terrainWidth = 2000f;  // Actual world width
-    public float terrainLength = 2000f; // Actual world length
+    public float terrainWidth = 1000f;  // Actual world width
+    public float terrainLength = 1000f; // Actual world length
     
     [Header("Sand Dune Settings")]
     [Range(1, 8)]
-    public int octaves = 3;  // Reduced for smoother, larger features
+    public int octaves = 4;  // Reduced for smoother, larger features
     [Range(0f, 1f)]
-    public float persistence = 0.4f;  // Lower for smoother transitions
+    public float persistence = 0.5f;  // Lower for smoother transitions
     [Range(1f, 4f)]
-    public float lacunarity = 2f; // Standard value, not too jagged
+    public float lacunarity = 1.4f; // Standard value, not too jagged
     [Range(0f, 3f)]
-    public float duneHeight = 1.8f;  // Multiplier applied to final normalized height (keep an eye on this, >1 can saturate)
+    public float duneHeight = 1f;  // Multiplier applied to final normalized height (keep an eye on this, >1 can saturate)
     [Range(0f, 1f)]
-    public float windDirection = 0.3f; // Creates asymmetrical dunes, increasing it makes windward side gentler
+    public float windDirection = 0.6f; // Creates asymmetrical dunes, increasing it makes windward side gentler
     [Range(0.1f, 3f)]
     public float duneStretch = 1.5f; // Elongates dunes in wind direction
 
     [Header("Biome Settings")]
-    [Tooltip("Lower = larger biome regions. Try 0.02 - 0.08 for large patches.")]
-    public float biomeScale = 0.02f; // Controls size of biome regions (smaller => bigger regions)
+    [Tooltip("Higher = smaller biome regions. Try 0.08 - 0.2 for smaller patches.")]
+    public float biomeScale = 0.2f; // Try 0.08, 0.1, or 0.2 for smaller biomes
     [Tooltip("Below this value becomes salt-flat. 0.5 is neutral.")]
     [Range(0f,1f)]
     public float biomeThreshold = 0.5f; // Threshold for deciding biomes
     [Tooltip("How soft the transition between biomes is (0 = hard edge).")]
     [Range(0f,0.5f)]
-    public float biomeTransition = 0.12f; // Width of the blend zone around threshold
+    public float biomeTransition = 0.01f; // Width of the blend zone around threshold
     [Tooltip("Scale applied to the random offsets when sampling biome noise (keeps mask stable).")]
     public float biomeOffsetScale = 0.01f;
+
+    [Header("Terrain Textures")]
+    public Texture2D duneTexture;
+    public Texture2D saltFlatTexture;
+
 
     private float offsetX;
     private float offsetY;
@@ -65,14 +70,17 @@ public class TerrainGenerator : MonoBehaviour
     TerrainData GenerateTerrain(TerrainData terrainData)
     {
         terrainData.heightmapResolution = width + 1;
-
-        // Set the actual world size of the terrain (not the resolution!)
         terrainData.size = new Vector3(terrainWidth, depth, terrainLength);
 
+        // Set heightmap
         terrainData.SetHeights(0, 0, GenerateHeights());
+
+        // Apply textures based on biome mask
+        ApplyTextures(terrainData);
 
         return terrainData;
     }
+
 
     // Generate height map using Perlin noise
     float[,] GenerateHeights()
@@ -148,21 +156,69 @@ public class TerrainGenerator : MonoBehaviour
 
         return final;
     }
-    
+
     // Apply sand dune specific shaping
     float ApplyDuneShape(float height, float x, float y)
     {
         // Create asymmetrical slopes (gentle windward, steep leeward)
         float windEffect = Mathf.Sin(x * Mathf.PI * 2f + windDirection) * 0.1f;
         height += windEffect;
-        
+
         // Smooth out the terrain for that rolling sand dune look
         height = Mathf.Pow(height, 1.2f);
-        
+
         // Add some randomness to break up patterns
         float randomness = Mathf.PerlinNoise(x * 50f + offsetX, y * 50f + offsetY) * 0.05f;
         height += randomness;
-        
+
         return height;
     }
+    
+    // Apply textures based on biome mask
+    void ApplyTextures(TerrainData terrainData)
+    {
+        // --- Define SplatPrototypes ---
+        TerrainLayer duneLayer = new TerrainLayer();
+        duneLayer.diffuseTexture = duneTexture;
+        duneLayer.tileSize = new Vector2(5, 5); // texture scale
+
+        TerrainLayer saltLayer = new TerrainLayer();
+        saltLayer.diffuseTexture = saltFlatTexture;
+        saltLayer.tileSize = new Vector2(5, 5);
+
+        terrainData.terrainLayers = new TerrainLayer[] { duneLayer, saltLayer };
+
+        int mapWidth = terrainData.alphamapWidth;
+        int mapHeight = terrainData.alphamapHeight;
+        float[,,] splatmapData = new float[mapWidth, mapHeight, 2];
+
+        for (int y = 0; y < mapHeight; y++)
+        {
+            for (int x = 0; x < mapWidth; x++)
+            {
+                // Convert to normalized coordinates (0–1)
+                float normX = (float)x / (mapWidth - 1);
+                float normY = (float)y / (mapHeight - 1);
+
+                // Reuse your biome noise calculation
+                float biomeMask = Mathf.PerlinNoise(
+                    normX * biomeScale + offsetX * biomeOffsetScale,
+                    normY * biomeScale + offsetY * biomeOffsetScale
+                );
+                float blend = Mathf.InverseLerp(
+                    biomeThreshold - biomeTransition,
+                    biomeThreshold + biomeTransition,
+                    biomeMask
+                );
+                blend = Mathf.Pow(blend, 8f); // increase exponent for sharper edge
+
+                // Assign texture weights
+                splatmapData[y, x, 0] = blend;       // Dune texture
+                splatmapData[y, x, 1] = 1 - blend;   // Salt flat texture
+            }
+        }
+
+        terrainData.SetAlphamaps(0, 0, splatmapData);
+    }
+
 }

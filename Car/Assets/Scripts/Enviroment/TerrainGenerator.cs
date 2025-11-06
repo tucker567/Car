@@ -30,19 +30,22 @@ public class TerrainGenerator : MonoBehaviour
 
     [Header("Biome Settings")]
     [Tooltip("Higher = smaller biome regions. Try 0.08 - 0.2 for smaller patches.")]
-    public float biomeScale = 0.2f; // Try 0.08, 0.1, or 0.2 for smaller biomes
+    public float biomeScale = 0.2f; // Try 0.08, 0.1, or 0.2 for smaller biomes, larger the # the bigger the biomes
     [Tooltip("Below this value becomes salt-flat. 0.5 is neutral.")]
     [Range(0f,1f)]
-    public float biomeThreshold = 0.5f; // Threshold for deciding biomes
+    public float biomeThreshold = 0.5f; // Threshold for deciding biomes, larger values = more dunes
     [Tooltip("How soft the transition between biomes is (0 = hard edge).")]
     [Range(0f,0.5f)]
-    public float biomeTransition = 0.01f; // Width of the blend zone around threshold
+    public float biomeTransition = 0.01f; // Width of the blend zone around threshold, larger = smoother transition
     [Tooltip("Scale applied to the random offsets when sampling biome noise (keeps mask stable).")]
     public float biomeOffsetScale = 0.01f;
 
     [Header("Terrain Textures")]
     public Texture2D duneTexture;
     public Texture2D saltFlatTexture;
+
+    [Header("Texture Tiling")]
+    public int tileSize = 5;
 
 
     private float offsetX;
@@ -177,48 +180,52 @@ public class TerrainGenerator : MonoBehaviour
     // Apply textures based on biome mask
     void ApplyTextures(TerrainData terrainData)
     {
-        // --- Define SplatPrototypes ---
+        // make layers
         TerrainLayer duneLayer = new TerrainLayer();
         duneLayer.diffuseTexture = duneTexture;
-        duneLayer.tileSize = new Vector2(5, 5); // texture scale
+        duneLayer.tileSize = new Vector2(tileSize, tileSize);
 
         TerrainLayer saltLayer = new TerrainLayer();
         saltLayer.diffuseTexture = saltFlatTexture;
-        saltLayer.tileSize = new Vector2(5, 5);
+        saltLayer.tileSize = new Vector2(tileSize, tileSize);
 
         terrainData.terrainLayers = new TerrainLayer[] { duneLayer, saltLayer };
 
-        int mapWidth = terrainData.alphamapWidth;
-        int mapHeight = terrainData.alphamapHeight;
-        float[,,] splatmapData = new float[mapWidth, mapHeight, 2];
+        int mapWidth = terrainData.alphamapWidth;   // X (world X)
+        int mapHeight = terrainData.alphamapHeight; // Y (world Z)
+        float[,,] splatmapData = new float[mapHeight, mapWidth, 2];
 
         for (int y = 0; y < mapHeight; y++)
         {
             for (int x = 0; x < mapWidth; x++)
             {
-                // Convert to normalized coordinates (0–1)
-                float normX = (float)x / (mapWidth - 1);
-                float normY = (float)y / (mapHeight - 1);
+                // normalized terrain coords
+                float normX = (float)x / (mapWidth - 1);   // world X
+                float normY = (float)y / (mapHeight - 1);  // world Z
 
-                // Reuse your biome noise calculation
+                // IMPORTANT: swap when sampling noise so it matches your height code
+                // your height code thinks in (xCoord, yCoord) == (X, Z)
                 float biomeMask = Mathf.PerlinNoise(
-                    normX * biomeScale + offsetX * biomeOffsetScale,
-                    normY * biomeScale + offsetY * biomeOffsetScale
+                normY * biomeScale + offsetX * biomeOffsetScale,
+                normX * biomeScale + offsetY * biomeOffsetScale
                 );
+
                 float blend = Mathf.InverseLerp(
                     biomeThreshold - biomeTransition,
                     biomeThreshold + biomeTransition,
                     biomeMask
                 );
-                blend = Mathf.Pow(blend, 8f); // increase exponent for sharper edge
 
-                // Assign texture weights
-                splatmapData[y, x, 0] = blend;       // Dune texture
-                splatmapData[y, x, 1] = 1 - blend;   // Salt flat texture
+                // you can keep your sharpening
+                blend = Mathf.Pow(blend, 8f);
+
+                splatmapData[y, x, 0] = blend;       // dunes
+                splatmapData[y, x, 1] = 1f - blend;  // salt flats
             }
         }
 
         terrainData.SetAlphamaps(0, 0, splatmapData);
     }
+
 
 }

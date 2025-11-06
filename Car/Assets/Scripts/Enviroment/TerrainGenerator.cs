@@ -22,12 +22,24 @@ public class TerrainGenerator : MonoBehaviour
     [Range(1f, 4f)]
     public float lacunarity = 2f; // Standard value, not too jagged
     [Range(0f, 3f)]
-    public float duneHeight = 1.8f;  // Much taller dunes
-    [Range(0f, 2f)]
+    public float duneHeight = 1.8f;  // Multiplier applied to final normalized height (keep an eye on this, >1 can saturate)
+    [Range(0f, 1f)]
     public float windDirection = 0.3f; // Creates asymmetrical dunes, increasing it makes windward side gentler
     [Range(0.1f, 3f)]
     public float duneStretch = 1.5f; // Elongates dunes in wind direction
-    
+
+    [Header("Biome Settings")]
+    [Tooltip("Lower = larger biome regions. Try 0.02 - 0.08 for large patches.")]
+    public float biomeScale = 0.02f; // Controls size of biome regions (smaller => bigger regions)
+    [Tooltip("Below this value becomes salt-flat. 0.5 is neutral.")]
+    [Range(0f,1f)]
+    public float biomeThreshold = 0.5f; // Threshold for deciding biomes
+    [Tooltip("How soft the transition between biomes is (0 = hard edge).")]
+    [Range(0f,0.5f)]
+    public float biomeTransition = 0.12f; // Width of the blend zone around threshold
+    [Tooltip("Scale applied to the random offsets when sampling biome noise (keeps mask stable).")]
+    public float biomeOffsetScale = 0.01f;
+
     private float offsetX;
     private float offsetY;
 
@@ -47,10 +59,9 @@ public class TerrainGenerator : MonoBehaviour
         
         Terrain terrain = GetComponent<Terrain>();
         terrain.terrainData = GenerateTerrain(terrain.terrainData);
-
     }
 
-    // Update is called once per frame
+    // Generate terrain data
     TerrainData GenerateTerrain(TerrainData terrainData)
     {
         terrainData.heightmapResolution = width + 1;
@@ -78,40 +89,64 @@ public class TerrainGenerator : MonoBehaviour
         return heights;
     }
 
-    // Calculate height using multi-octave Perlin noise for sand dunes
+    // Calculate height using multi-octave Perlin noise for sand dunes, blended with biome mask
     float CalculateHeight(int x, int y)
     {
         float xCoord = (float)x / width;
         float yCoord = (float)y / this.height;
-        
-        // Apply wind direction stretching
+
+        // --- BIOME MASK (low = salt flat, high = dunes) ---
+        // Use small offsetScale to keep biome noise stable and in an expected range
+        float biomeMask = Mathf.PerlinNoise(
+            xCoord * biomeScale + offsetX * biomeOffsetScale,
+            yCoord * biomeScale + offsetY * biomeOffsetScale
+        );
+
+        // Smooth blend factor around threshold using transition width to avoid hard cutoffs
+        float blend = Mathf.InverseLerp(biomeThreshold - biomeTransition, biomeThreshold + biomeTransition, biomeMask);
+        blend = Mathf.SmoothStep(0f, 1f, blend); // now 0..1 where 0 = salt flat, 1 = dunes
+
+        // --- DUNE HEIGHT CALC ---
         float stretchedX = xCoord * duneStretch;
         float stretchedY = yCoord;
-        
+
         float terrainHeight = 0f;
         float amplitude = 1f;
         float frequency = scale;
-        
-        // Generate multiple octaves for realistic sand dune texture
+
         for (int i = 0; i < octaves; i++)
         {
             float noiseValue = Mathf.PerlinNoise(
                 (stretchedX * frequency) + offsetX,
                 (stretchedY * frequency) + offsetY
             );
-            
+
             terrainHeight += noiseValue * amplitude;
             amplitude *= persistence;
             frequency *= lacunarity;
         }
-        
-        // Normalize height
+
+        // Normalize by expected amplitude sum
         terrainHeight /= (2f - 1f / Mathf.Pow(2f, octaves - 1));
-        
-        // Apply sand dune characteristics
         terrainHeight = ApplyDuneShape(terrainHeight, xCoord, yCoord);
-        
-        return Mathf.Clamp01(terrainHeight * duneHeight);
+        terrainHeight = Mathf.Clamp01(terrainHeight);
+        terrainHeight = Mathf.SmoothStep(0f, 1f, terrainHeight);
+
+        // --- SALT FLAT (subtle noise) ---
+        float saltFlatHeight = Mathf.PerlinNoise(
+            xCoord * 5f + offsetX * 2f,
+            yCoord * 5f + offsetY * 2f
+        ) * 0.02f; // very small variation for salt flats (tweak as needed)
+
+        // Blend between salt flat and dunes using the smooth blend value
+        float blendedNormalized = Mathf.Lerp(saltFlatHeight, terrainHeight, blend);
+
+        // Apply duneHeight multiplier but make sure final normalized height stays within [0,1]
+        // NOTE: duneHeight > 1 may saturate the values — if you want world-unit heights, convert relative to 'depth'
+        float final = blendedNormalized * duneHeight;
+        final = Mathf.Clamp01(final);
+
+        return final;
     }
     
     // Apply sand dune specific shaping
@@ -130,5 +165,4 @@ public class TerrainGenerator : MonoBehaviour
         
         return height;
     }
-    
 }

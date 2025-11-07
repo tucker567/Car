@@ -963,12 +963,21 @@ MonoBehaviour:
   duneHeight: 1
   windDirection: 0.6
   duneStretch: 1.5
+  minRivers: 0
+  maxRivers: 2
+  riverWidth: 15
+  riverDepth: 0
+  riverWindiness: 5
+  riverBankSoftness: 12
+  riverBankSteepness: 10
+  riverTextureSpread: 4.5
   biomeScale: 0.2
   biomeThreshold: 0.5
   biomeTransition: 0.01
   biomeOffsetScale: 0.01
   duneTexture: {fileID: 2800000, guid: 7600b59d926f401409b806bf41024da0, type: 3}
   saltFlatTexture: {fileID: 2800000, guid: 0d3ed836ce77e8a4787a2ae4f08cedf7, type: 3}
+  riverTexture: {fileID: 2800000, guid: 186f539115fd77546abac26a9658c44f, type: 3}
   tileSize: 6
 --- !u!1 &668435987
 GameObject:

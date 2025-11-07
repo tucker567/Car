@@ -192,11 +192,6 @@ public class TerrainGenerator : MonoBehaviour
         return heights;
     }
 
-
-
-
-
-
     // Calculate height using multi-octave Perlin noise for sand dunes, blended with biome mask
     float CalculateHeight(int x, int y)
     {
@@ -240,11 +235,12 @@ public class TerrainGenerator : MonoBehaviour
         terrainHeight = Mathf.Clamp01(terrainHeight);
         terrainHeight = Mathf.SmoothStep(0f, 1f, terrainHeight);
 
-        // --- SALT FLAT (subtle noise) ---
-        float saltFlatHeight = Mathf.PerlinNoise(
+        // --- SALT FLAT (subtle noise, but with a base height) ---
+        float saltFlatBase = 0.08f; // base height for salt flats (tweak as needed)
+        float saltFlatHeight = saltFlatBase + Mathf.PerlinNoise(
             xCoord * 5f + offsetX * 2f,
             yCoord * 5f + offsetY * 2f
-        ) * 0.02f; // very small variation for salt flats (tweak as needed)
+        ) * 0.05f; // increased variation for salt flats
 
         // Blend between salt flat and dunes using the smooth blend value
         float blendedNormalized = Mathf.Lerp(saltFlatHeight, terrainHeight, blend);

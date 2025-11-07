@@ -34,9 +34,7 @@ public class TerrainGenerator : MonoBehaviour
     public float riverWidth = 4f;   // Width of river in terrain units
     public float riverDepth = 0.3f; // or 0.4f
     public float riverWindiness = 2f; // higher = more winding
-    public float riverBankSoftness = 2f; // higher = steeper, lower = gentler
-    [Range(0.5f, 5f)]
-    public float riverBankSteepness = 2f; // Lower = gentler banks, higher = steeper
+    public float riverBankSoftness = 2f; // Higher = steeper banks, lower = smoother transition (try 0.5-3.0)
     public float riverTextureSpread = 1.2f; // >1 = wider river texture banks
 
     [Header("Biome Settings")]
@@ -168,8 +166,10 @@ public class TerrainGenerator : MonoBehaviour
                         int nx = Mathf.Clamp(Mathf.RoundToInt(riverX + perp.x * dx), 0, width - 1);
                         int ny = Mathf.Clamp(Mathf.RoundToInt(centerY + perp.y * dy), 0, height - 1);
 
-                        // Gaussian falloff for smooth banks using riverBankSteepness
-                        float falloff = Mathf.Exp(-Mathf.Pow(dist / riverWidth, 2f) * riverBankSteepness);
+                        // Smooth falloff for river banks using riverBankSoftness
+                        // Using a power function for better control: lower values = smoother transition
+                        float normalizedDist = dist / riverWidth;
+                        float falloff = Mathf.Pow(1f - Mathf.Clamp01(normalizedDist), riverBankSoftness);
 
                         // Biome depth multiplier (deeper in salt flats)
                         float xCoord = (float)nx / width;

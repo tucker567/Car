@@ -32,9 +32,12 @@ public class TerrainGenerator : MonoBehaviour
     public int minRivers = 0;       // Minimum number of rivers
     public int maxRivers = 3;       // Maximum number of rivers
     public float riverWidth = 4f;   // Width of river in terrain units
-   public float riverDepth = 0.3f; // or 0.4f
-
-
+    public float riverDepth = 0.3f; // or 0.4f
+    public float riverWindiness = 2f; // higher = more winding
+    public float riverBankSoftness = 2f; // higher = steeper, lower = gentler
+    [Range(0.5f, 5f)]
+    public float riverBankSteepness = 2f; // Lower = gentler banks, higher = steeper
+    public float riverTextureSpread = 1.2f; // >1 = wider river texture banks
 
     [Header("Biome Settings")]
     [Tooltip("Higher = smaller biome regions. Try 0.08 - 0.2 for smaller patches.")]
@@ -122,34 +125,75 @@ public class TerrainGenerator : MonoBehaviour
 
     float[,] GenerateRivers(float[,] heights, out float[,] riverMask)
     {
-        riverMask = new float[width, height]; // initialize mask
-
+        riverMask = new float[width, height];
         int riverCount = Random.Range(minRivers, maxRivers + 1);
 
         for (int r = 0; r < riverCount; r++)
         {
-            int x = 0;
-            int y = Random.Range(0, height);
+            int riverSeed = seed + r * 1000;
 
-            for (int i = 0; i < width; i++)
+            // Generate smooth river path
+            float[] riverPath = new float[width];
+            int startY = Random.Range(height / 4, 3 * height / 4);
+            riverPath[0] = startY;
+
+            for (int x = 1; x < width; x++)
             {
-                for (int w = -(int)riverWidth; w <= (int)riverWidth; w++)
+                float offset = (Mathf.PerlinNoise(x * 0.1f, riverSeed * 0.1f) * 2f - 1f) * riverWindiness;
+                riverPath[x] = Mathf.Clamp(riverPath[x - 1] + offset, 0, height - 1);
+            }
+
+            float step = 0.2f; // fine step for smooth curves
+            for (float riverX = 0; riverX < width - 1; riverX += step)
+            {
+                int x0 = Mathf.FloorToInt(riverX);
+                int x1 = Mathf.CeilToInt(riverX);
+                float t = riverX - x0;
+                float centerY = Mathf.Lerp(riverPath[x0], riverPath[x1], t);
+
+                // Tangent for perpendicular carving
+                float dirX = 1f;
+                float dirY = 0f;
+                if (x1 < width) dirY = riverPath[x1] - riverPath[x0];
+                Vector2 perp = new Vector2(-dirY, dirX).normalized;
+
+                int radius = Mathf.CeilToInt(riverWidth);
+                for (int dx = -radius; dx <= radius; dx++)
                 {
-                    int rx = Mathf.Clamp(x + w, 0, width - 1);
-                    int ry = height - 1 - Mathf.Clamp(y, 0, height - 1);
+                    for (int dy = -radius; dy <= radius; dy++)
+                    {
+                        float dist = new Vector2(dx, dy).magnitude;
+                        if (dist > riverWidth) continue;
 
-                    heights[rx, ry] = Mathf.Min(heights[rx, ry], riverDepth);
-                    riverMask[rx, ry] = 1f; // mark river presence
+                        int nx = Mathf.Clamp(Mathf.RoundToInt(riverX + perp.x * dx), 0, width - 1);
+                        int ny = Mathf.Clamp(Mathf.RoundToInt(centerY + perp.y * dy), 0, height - 1);
+
+                        // Gaussian falloff for smooth banks using riverBankSteepness
+                        float falloff = Mathf.Exp(-Mathf.Pow(dist / riverWidth, 2f) * riverBankSteepness);
+
+                        // Biome depth multiplier (deeper in salt flats)
+                        float xCoord = (float)nx / width;
+                        float yCoord = (float)ny / height;
+                        float biomeMask = Mathf.PerlinNoise(
+                            xCoord * biomeScale + offsetX * biomeOffsetScale,
+                            yCoord * biomeScale + offsetY * biomeOffsetScale
+                        );
+                        float riverDepthMultiplier = Mathf.Lerp(1.5f, 1f, biomeMask);
+                        float finalRiverDepth = riverDepth * riverDepthMultiplier;
+
+                        // Smoothly blend with terrain
+                        heights[nx, ny] = Mathf.Lerp(heights[nx, ny], finalRiverDepth, falloff);
+                        riverMask[nx, ny] = Mathf.Max(riverMask[nx, ny], falloff);
+                    }
                 }
-
-                x++;
-                y += Random.Range(-1, 2);
-                y = Mathf.Clamp(y, 0, height - 1);
             }
         }
 
         return heights;
     }
+
+
+
 
 
 
@@ -265,6 +309,9 @@ public class TerrainGenerator : MonoBehaviour
 
                 // Sample river and heights using rotated coordinates
                 float river = riverMask[rotX, rotY];
+
+                // Widen river texture for banks
+                river = Mathf.Pow(river, 1f / riverTextureSpread);
 
                 // Biome noise for dunes and salt flats
                 float xCoord = (float)rotX / width;

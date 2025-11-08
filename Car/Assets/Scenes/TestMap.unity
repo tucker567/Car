@@ -5917,8 +5917,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 36ab5959970ed5344b89b95df3c399e9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: '::'
-  tilesX: 4
-  tilesY: 4
+  tilesX: 10
+  tilesY: 10
   tileWorldWidth: 1000
   tileWorldLength: 1000
   heightmapResolution: 256

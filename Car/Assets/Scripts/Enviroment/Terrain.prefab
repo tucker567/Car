@@ -153,7 +153,21 @@ MonoBehaviour:
   biomeThreshold: 0.5
   biomeTransition: 0.01
   biomeOffsetScale: 0.01
+  biomeOctaves: 6
+  biomePersistence: 0.5
+  biomeLacunarity: 2
+  biomeUseRidged: 0
+  biomeRotationDegrees: 0
+  biomeWarpStrength: 0.6
+  biomeWarpScale: 0.7
+  biomeContrast: 0.5
+  biomeInvert: 1
+  biomeUseSeparateSeed: 0
+  biomeSeed: 0
   duneTexture: {fileID: 2800000, guid: 7600b59d926f401409b806bf41024da0, type: 3}
   saltFlatTexture: {fileID: 2800000, guid: 0d3ed836ce77e8a4787a2ae4f08cedf7, type: 3}
   riverTexture: {fileID: 2800000, guid: 087c475847b768f44a3866b91bff8cf5, type: 3}
   tileSize: 6
+  globalWorldWidth: 1000
+  globalWorldLength: 1000
+  useGlobalSeamless: 1

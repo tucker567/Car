@@ -2,50 +2,57 @@ using UnityEngine;
 
 public class TerrainGenerator : MonoBehaviour
 {
+    [Header("Lifecycle")]
+    public bool autoGenerate = true;   // If true, generates on Start(); otherwise call Generate() manually.
+    public bool enableRivers = true;   // Disable for tiled worlds unless you accept per-tile rivers.
+
     [Header("Terrain Settings")]
-    public int depth = 20;  // Increased height range for taller dunes
-    public int width = 256;  // Heightmap resolution
-    public int height = 256; // Heightmap resolution
-    public float scale = 8f;  // Much smaller scale = bigger spacing between dunes
+    public int depth = 20;      // Vertical scale in world units
+    public int width = 256;     // Heightmap resolution X (samples)
+    public int height = 256;    // Heightmap resolution Y (samples)
+    public float scale = 8f;    // Noise frequency in 1/world-units (lower = larger features)
     public bool useRandomSeed = true;
     public int seed = 0;
-    
-    [Header("Terrain World Size")]
-    public float terrainWidth = 1000f;  // Actual world width
-    public float terrainLength = 1000f; // Actual world length
-    
+
+    [Header("Terrain World Size (per tile)")]
+    public float terrainWidth = 1000f;   // Tile width in world units (X)
+    public float terrainLength = 1000f;  // Tile length in world units (Z)
+
+    [Header("Tiling: world origin of this tile (meters)")]
+    public Vector2 worldOrigin = Vector2.zero; // X = Unity X, Y = Unity Z
+
     [Header("Sand Dune Settings")]
     [Range(1, 8)]
-    public int octaves = 4;  // Reduced for smoother, larger features
+    public int octaves = 4;
     [Range(0f, 1f)]
-    public float persistence = 0.5f;  // Lower for smoother transitions
+    public float persistence = 0.5f;
     [Range(1f, 4f)]
-    public float lacunarity = 1.4f; // Standard value, not too jagged
+    public float lacunarity = 1.4f;
     [Range(0f, 3f)]
-    public float duneHeight = 1f;  // Multiplier applied to final normalized height (keep an eye on this, >1 can saturate)
+    public float duneHeight = 1f;
     [Range(0f, 1f)]
-    public float windDirection = 0.6f; // Creates asymmetrical dunes, increasing it makes windward side gentler
+    public float windDirection = 0.6f;
     [Range(0.1f, 3f)]
-    public float duneStretch = 1.5f; // Elongates dunes in wind direction
+    public float duneStretch = 1.5f;
 
     [Header("River Settings")]
-    public int minRivers = 0;       // Minimum number of rivers
-    public int maxRivers = 3;       // Maximum number of rivers
-    public float riverWidth = 4f;   // Width of river in terrain units
-    public float riverDepth = 0.3f; // or 0.4f
-    public float riverWindiness = 2f; // higher = more winding
-    public float riverBankSoftness = 2f; // Higher = steeper banks, lower = smoother transition (try 0.5-3.0)
-    public float riverTextureSpread = 1.2f; // >1 = wider river texture banks
+    public int minRivers = 0;
+    public int maxRivers = 3;
+    public float riverWidth = 4f;
+    public float riverDepth = 0.3f;
+    public float riverWindiness = 2f;
+    public float riverBankSoftness = 2f;
+    public float riverTextureSpread = 1.2f;
 
     [Header("Biome Settings")]
     [Tooltip("Higher = smaller biome regions. Try 0.08 - 0.2 for smaller patches.")]
-    public float biomeScale = 0.2f; // Try 0.08, 0.1, or 0.2 for smaller biomes, larger the # the bigger the biomes
+    public float biomeScale = 0.2f; // in 1/world-units
     [Tooltip("Below this value becomes salt-flat. 0.5 is neutral.")]
-    [Range(0f,1f)]
-    public float biomeThreshold = 0.5f; // Threshold for deciding biomes, larger values = more dunes
+    [Range(0f, 1f)]
+    public float biomeThreshold = 0.5f;
     [Tooltip("How soft the transition between biomes is (0 = hard edge).")]
-    [Range(0f,0.5f)]
-    public float biomeTransition = 0.01f; // Width of the blend zone around threshold, larger = smoother transition
+    [Range(0f, 0.5f)]
+    public float biomeTransition = 0.01f;
     [Tooltip("Scale applied to the random offsets when sampling biome noise (keeps mask stable).")]
     public float biomeOffsetScale = 0.01f;
 
@@ -57,70 +64,94 @@ public class TerrainGenerator : MonoBehaviour
     [Header("Texture Tiling")]
     public int tileSize = 5;
 
+    [Header("Global Seamless Settings (set by WorldGenerator)")]
+    public float globalWorldWidth = 1000f;   // Sum of all tile widths
+    public float globalWorldLength = 1000f;  // Sum of all tile lengths
+    public bool useGlobalSeamless = true;    // If true, sample noise in global space for seamless transitions
 
     private float offsetX;
     private float offsetY;
 
-    // Start is called before the first frame update
     void Start()
     {
-        // Generate random seed if useRandomSeed is enabled
+        InitializeSeed();
+        if (autoGenerate)
+        {
+            Generate();
+        }
+    }
+
+    public void InitializeSeed()
+    {
         if (useRandomSeed)
         {
             seed = Random.Range(0, 10000);
         }
-        
-        // Generate random offsets based on seed
+
         Random.InitState(seed);
         offsetX = Random.Range(0f, 1000f);
         offsetY = Random.Range(0f, 1000f);
-        
-        Terrain terrain = GetComponent<Terrain>();
-        terrain.terrainData = GenerateTerrain(terrain.terrainData);
     }
 
-    // Generate terrain data
-// Generate terrain data
-    TerrainData GenerateTerrain(TerrainData terrainData)
+    public void Generate()
     {
-        // Set heightmap resolution and world size
-        terrainData.heightmapResolution = width + 1;
-        terrainData.size = new Vector3(terrainWidth, depth, terrainLength);
-
-        // --- Generate heightmap with dunes and salt flats ---
-        float[,] heights = GenerateHeights();
-
-        // --- Carve rivers and get river mask ---
-        float[,] riverMask;
-        heights = GenerateRivers(heights, out riverMask);
-
-        // Apply textures based on biome and river mask
-        ApplyTextures(terrainData, heights, riverMask);
-
-        // Apply final heights to terrain
-        terrainData.SetHeights(0, 0, heights);
-
-        return terrainData;
-    }
-
-    // Generate height map using Perlin noise
-    float[,] GenerateHeights()
-    {
-        float[,] heights = new float[width, height];
-        for (int x = 0; x < width; x++)
+        var terrain = GetComponent<Terrain>();
+        if (terrain == null)
         {
-            for (int y = 0; y < height; y++)
-            {
-                heights[x, y] = CalculateHeight(x, y);
-            }
+            terrain = gameObject.AddComponent<Terrain>();
         }
 
-        // REMOVE this line:
-        // heights = GenerateRivers(heights);
+        // Always create a fresh TerrainData per tile
+        var data = new TerrainData();
+        data.heightmapResolution = Mathf.Clamp(width + 1, 33, 4097);
+        data.size = new Vector3(terrainWidth, depth, terrainLength);
 
+        // IMPORTANT: keep alphamap res consistent across tiles to avoid mapping drift
+        data.alphamapResolution = Mathf.Clamp(width, 16, 2048);
+
+        // Generate content
+        float[,] heights = GenerateHeights();
+        float[,] riverMask;
+        if (enableRivers)
+        {
+            heights = GenerateRivers(heights, out riverMask);
+        }
+        else
+        {
+            riverMask = new float[width, height];
+        }
+
+        ApplyTextures(data, heights, riverMask);
+
+        // Transpose heights before setting
+        data.SetHeights(0, 0, TransposeHeightmap(heights));
+
+        // Assign to Terrain and Collider
+        terrain.terrainData = data;
+
+        var collider = GetComponent<TerrainCollider>();
+        if (collider == null)
+        {
+            collider = gameObject.AddComponent<TerrainCollider>();
+        }
+        collider.terrainData = data;
+    }
+
+    // Generate height map using world-space Perlin noise (seamless across tiles)
+    float[,] GenerateHeights()
+    {
+        float[,] heights = new float[width + 1, height + 1];
+        for (int sx = 0; sx <= width; sx++)
+        {
+            for (int sy = 0; sy <= height; sy++)
+            {
+                heights[sx, sy] = CalculateHeight(sx, sy);
+            }
+        }
         return heights;
     }
 
+    // Rivers are still per-tile; for seamless world rivers, handle globally in a manager.
     float[,] GenerateRivers(float[,] heights, out float[,] riverMask)
     {
         riverMask = new float[width, height];
@@ -130,7 +161,7 @@ public class TerrainGenerator : MonoBehaviour
         {
             int riverSeed = seed + r * 1000;
 
-            // Generate smooth river path
+            // Generate smooth river path across tile width (local to this tile)
             float[] riverPath = new float[width];
             int startY = Random.Range(height / 4, 3 * height / 4);
             riverPath[0] = startY;
@@ -167,21 +198,26 @@ public class TerrainGenerator : MonoBehaviour
                         int ny = Mathf.Clamp(Mathf.RoundToInt(centerY + perp.y * dy), 0, height - 1);
 
                         // Smooth falloff for river banks using riverBankSoftness
-                        // Using a power function for better control: lower values = smoother transition
                         float normalizedDist = dist / riverWidth;
                         float falloff = Mathf.Pow(1f - Mathf.Clamp01(normalizedDist), riverBankSoftness);
 
-                        // Biome depth multiplier (deeper in salt flats)
-                        float xCoord = (float)nx / width;
-                        float yCoord = (float)ny / height;
+                        // Biome depth multiplier (deeper in salt flats) using world-space coords
+                        WorldXYFromSample(nx, ny, out float xWorld, out float yWorld);
+                        float xNormGlobal = xWorld / Mathf.Max(0.0001f, globalWorldWidth);
+                        float yNormGlobal = yWorld / Mathf.Max(0.0001f, globalWorldLength);
+                        float xNormTile = (xWorld - worldOrigin.x) / terrainWidth;
+                        float yNormTile = (yWorld - worldOrigin.y) / terrainLength;
+                        float xNorm = useGlobalSeamless ? xNormGlobal : xNormTile;
+                        float yNorm = useGlobalSeamless ? yNormGlobal : yNormTile;
+
                         float biomeMask = Mathf.PerlinNoise(
-                            xCoord * biomeScale + offsetX * biomeOffsetScale,
-                            yCoord * biomeScale + offsetY * biomeOffsetScale
+                            xWorld * FreqX(biomeScale) + offsetX * biomeOffsetScale,
+                            yWorld * FreqY(biomeScale) + offsetY * biomeOffsetScale
                         );
                         float riverDepthMultiplier = Mathf.Lerp(1.5f, 1f, biomeMask);
                         float finalRiverDepth = riverDepth * riverDepthMultiplier;
 
-                        // Smoothly blend with terrain
+                        // Blend
                         heights[nx, ny] = Mathf.Lerp(heights[nx, ny], finalRiverDepth, falloff);
                         riverMask[nx, ny] = Mathf.Max(riverMask[nx, ny], falloff);
                     }
@@ -192,98 +228,104 @@ public class TerrainGenerator : MonoBehaviour
         return heights;
     }
 
-    // Calculate height using multi-octave Perlin noise for sand dunes, blended with biome mask
-    float CalculateHeight(int x, int y)
+    // Calculate height using world-space Perlin noise with per-tile frequency (seamless across tiles)
+    float CalculateHeight(int sx, int sy)
     {
-        float xCoord = (float)x / width;
-        float yCoord = (float)y / this.height;
+        // World meters for this sample
+        WorldXYFromSample(sx, sy, out float xWorld, out float yWorld);
+
+        // Per-tile normalized (0..1) if we ever need it
+        float xNormTile = (xWorld - worldOrigin.x) / terrainWidth;
+        float yNormTile = (yWorld - worldOrigin.y) / terrainLength;
+
+        // Base domain: use world meters for seamless continuity
+        // Preserve your original "scale" meaning (cycles per tile) by converting to per-meter freq
+        float baseFreqX = FreqX(scale);
+        float baseFreqY = FreqY(scale);
+
+        // Biome uses same approach (cycles per tile -> per-meter)
+        float biomeFreqX = FreqX(biomeScale);
+        float biomeFreqY = FreqY(biomeScale);
 
         // --- BIOME MASK (low = salt flat, high = dunes) ---
-        // Use small offsetScale to keep biome noise stable and in an expected range
-        float biomeMask = Mathf.PerlinNoise(
-            xCoord * biomeScale + offsetX * biomeOffsetScale,
-            yCoord * biomeScale + offsetY * biomeOffsetScale
+        float biomeNoise = Mathf.PerlinNoise(
+            xWorld * biomeFreqX + offsetX * biomeOffsetScale,
+            yWorld * biomeFreqY + offsetY * biomeOffsetScale
         );
-
-        // Smooth blend factor around threshold using transition width to avoid hard cutoffs
-        float blend = Mathf.InverseLerp(biomeThreshold - biomeTransition, biomeThreshold + biomeTransition, biomeMask);
-        blend = Mathf.SmoothStep(0f, 1f, blend); // now 0..1 where 0 = salt flat, 1 = dunes
+        float blend = Mathf.InverseLerp(biomeThreshold - biomeTransition, biomeThreshold + biomeTransition, biomeNoise);
+        blend = Mathf.SmoothStep(0f, 1f, blend);
 
         // --- DUNE HEIGHT CALC ---
-        float stretchedX = xCoord * duneStretch;
-        float stretchedY = yCoord;
+        // Stretch dunes along X in the same world domain
+        float coordX = xWorld * duneStretch;
+        float coordY = yWorld;
 
         float terrainHeight = 0f;
         float amplitude = 1f;
-        float frequency = scale;
+        float octFreq = 1f; // octave multiplier
 
         for (int i = 0; i < octaves; i++)
         {
-            float noiseValue = Mathf.PerlinNoise(
-                (stretchedX * frequency) + offsetX,
-                (stretchedY * frequency) + offsetY
-            );
+            float u = coordX * (baseFreqX * octFreq) + offsetX;
+            float v = coordY * (baseFreqY * octFreq) + offsetY;
 
+            float noiseValue = Mathf.PerlinNoise(u, v);
             terrainHeight += noiseValue * amplitude;
+
             amplitude *= persistence;
-            frequency *= lacunarity;
+            octFreq *= lacunarity;
         }
 
         // Normalize by expected amplitude sum
         terrainHeight /= (2f - 1f / Mathf.Pow(2f, octaves - 1));
-        terrainHeight = ApplyDuneShape(terrainHeight, xCoord, yCoord);
+        terrainHeight = ApplyDuneShape(terrainHeight, xWorld, yWorld);
         terrainHeight = Mathf.Clamp01(terrainHeight);
         terrainHeight = Mathf.SmoothStep(0f, 1f, terrainHeight);
 
-        // --- SALT FLAT (subtle noise, but with a base height) ---
-        float saltFlatBase = 0.08f; // base height for salt flats (tweak as needed)
-        float saltFlatHeight = saltFlatBase + Mathf.PerlinNoise(
-            xCoord * 5f + offsetX * 2f,
-            yCoord * 5f + offsetY * 2f
-        ) * 0.05f; // increased variation for salt flats
+        // --- SALT FLAT (subtle noise, per-tile cycles -> per-meter freq) ---
+        float saltFlatBase = 0.08f;
+        float saltFreqX = FreqX(5f);
+        float saltFreqY = FreqY(5f);
 
-        // Blend between salt flat and dunes using the smooth blend value
+        float saltFlatHeight = saltFlatBase + Mathf.PerlinNoise(
+            xWorld * saltFreqX + offsetX * 2f,
+            yWorld * saltFreqY + offsetY * 2f
+        ) * 0.05f;
+
+        // Blend between salt flat and dunes
         float blendedNormalized = Mathf.Lerp(saltFlatHeight, terrainHeight, blend);
 
-        // Apply duneHeight multiplier but make sure final normalized height stays within [0,1]
-        // NOTE: duneHeight > 1 may saturate the values — if you want world-unit heights, convert relative to 'depth'
-        float final = blendedNormalized * duneHeight;
-        final = Mathf.Clamp01(final);
-
+        // Apply duneHeight multiplier
+        float final = Mathf.Clamp01(blendedNormalized * duneHeight);
         return final;
     }
 
-    // Apply sand dune specific shaping
-    float ApplyDuneShape(float height, float x, float y)
+    // Apply sand dune shaping (use world meters but keep approx. one cycle per tile for the wind sway)
+    float ApplyDuneShape(float height, float xWorld, float yWorld)
     {
-        // Create asymmetrical slopes (gentle windward, steep leeward)
-        float windEffect = Mathf.Sin(x * Mathf.PI * 2f + windDirection) * 0.1f;
+        // One sine cycle per tile width for the slight wind effect
+        float phaseX = xWorld * FreqX(1f);
+        float windEffect = Mathf.Sin(phaseX * Mathf.PI * 2f + windDirection) * 0.1f;
         height += windEffect;
 
-        // Smooth out the terrain for that rolling sand dune look
+        // Smooth dunes
         height = Mathf.Pow(height, 1.2f);
 
-        // Add some randomness to break up patterns
-        float randomness = Mathf.PerlinNoise(x * 50f + offsetX, y * 50f + offsetY) * 0.05f;
+        // Fine randomness: ~50 cycles per tile, per-meter mapping keeps it tile-size independent
+        float randFreqX = FreqX(50f);
+        float randFreqY = FreqY(50f);
+        float randomness = Mathf.PerlinNoise(xWorld * randFreqX + offsetX, yWorld * randFreqY + offsetY) * 0.05f;
         height += randomness;
 
         return height;
     }
-    
-        // Apply textures based on biome mask
+
+    // Texture application: sample biome with the same world-space domain/freq so splats match heights
     void ApplyTextures(TerrainData terrainData, float[,] heights, float[,] riverMask)
     {
-        TerrainLayer duneLayer = new TerrainLayer();
-        duneLayer.diffuseTexture = duneTexture;
-        duneLayer.tileSize = new Vector2(tileSize, tileSize);
-
-        TerrainLayer saltLayer = new TerrainLayer();
-        saltLayer.diffuseTexture = saltFlatTexture;
-        saltLayer.tileSize = new Vector2(tileSize, tileSize);
-
-        TerrainLayer riverLayer = new TerrainLayer();
-        riverLayer.diffuseTexture = riverTexture;
-        riverLayer.tileSize = new Vector2(tileSize, tileSize);
+        TerrainLayer duneLayer = new TerrainLayer { diffuseTexture = duneTexture, tileSize = new Vector2(tileSize, tileSize) };
+        TerrainLayer saltLayer = new TerrainLayer { diffuseTexture = saltFlatTexture, tileSize = new Vector2(tileSize, tileSize) };
+        TerrainLayer riverLayer = new TerrainLayer { diffuseTexture = riverTexture, tileSize = new Vector2(tileSize, tileSize) };
 
         terrainData.terrainLayers = new TerrainLayer[] { duneLayer, saltLayer, riverLayer };
 
@@ -291,33 +333,26 @@ public class TerrainGenerator : MonoBehaviour
         int mapHeight = terrainData.alphamapHeight;
         float[,,] splatmapData = new float[mapHeight, mapWidth, 3];
 
+        float biomeFreqX = FreqX(biomeScale);
+        float biomeFreqY = FreqY(biomeScale);
+
         for (int y = 0; y < mapHeight; y++)
         {
             for (int x = 0; x < mapWidth; x++)
             {
-                // Original heightmap coordinates
                 int hmX = Mathf.RoundToInt((float)x / (mapWidth - 1) * (width - 1));
                 int hmY = Mathf.RoundToInt((float)y / (mapHeight - 1) * (height - 1));
 
-                // --- Rotate 90° counterclockwise ---
-                int rotX = height - 1 - hmY;  // new X
-                int rotY = hmX;               // new Y
+                // Remove rotation
+                float river = riverMask[hmX, hmY];
 
-                // Sample river and heights using rotated coordinates
-                float river = riverMask[rotX, rotY];
-
-                // Widen river texture for banks
-                river = Mathf.Pow(river, 1f / riverTextureSpread);
-
-                // Biome noise for dunes and salt flats
-                float xCoord = (float)rotX / width;
-                float yCoord = (float)rotY / height;
+                // World meters for biome sampling
+                WorldXYFromSample(hmX, hmY, out float xWorld, out float yWorld);
 
                 float biomeNoise = Mathf.PerlinNoise(
-                    xCoord * biomeScale + offsetX * biomeOffsetScale,
-                    yCoord * biomeScale + offsetY * biomeOffsetScale
+                    xWorld * biomeFreqX + offsetX * biomeOffsetScale,
+                    yWorld * biomeFreqY + offsetY * biomeOffsetScale
                 );
-
                 float biomeBlend = Mathf.InverseLerp(
                     biomeThreshold - biomeTransition,
                     biomeThreshold + biomeTransition,
@@ -325,15 +360,36 @@ public class TerrainGenerator : MonoBehaviour
                 );
                 biomeBlend = Mathf.Clamp01(biomeBlend);
 
-                // --- Assign to splatmap, flip Y for top=0 ---
-                int mapY = mapHeight - 1 - y;
-
-                splatmapData[mapY, x, 0] = biomeBlend * (1f - river);      // dunes
-                splatmapData[mapY, x, 1] = (1f - biomeBlend) * (1f - river); // salt flats
-                splatmapData[mapY, x, 2] = river;                           // river
+                splatmapData[y, x, 0] = biomeBlend * (1f - river);        // dunes
+                splatmapData[y, x, 1] = (1f - biomeBlend) * (1f - river); // salt flats
+                splatmapData[y, x, 2] = river;                            // river
             }
         }
 
         terrainData.SetAlphamaps(0, 0, splatmapData);
+    }
+
+    // Map sample indices to world-space coordinates (meters)
+    void WorldXYFromSample(int sx, int sy, out float xWorld, out float yWorld)
+    {
+        float nx = (width <= 0) ? 0f : (float)sx / width;   // 0..1 across tile
+        float ny = (height <= 0) ? 0f : (float)sy / height;
+        xWorld = worldOrigin.x + nx * terrainWidth;
+        yWorld = worldOrigin.y + ny * terrainLength;
+    }
+
+    // Convert "cycles per tile" to frequency per meter
+    float FreqX(float cyclesPerTile) => cyclesPerTile / Mathf.Max(0.0001f, terrainWidth);
+    float FreqY(float cyclesPerTile) => cyclesPerTile / Mathf.Max(0.0001f, terrainLength);
+
+    float[,] TransposeHeightmap(float[,] heights)
+    {
+        int w = heights.GetLength(0);
+        int h = heights.GetLength(1);
+        float[,] transposed = new float[h, w];
+        for (int x = 0; x < w; x++)
+            for (int y = 0; y < h; y++)
+                transposed[y, x] = heights[x, y];
+        return transposed;
     }
 }

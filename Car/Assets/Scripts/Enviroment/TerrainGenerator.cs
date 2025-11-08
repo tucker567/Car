@@ -157,6 +157,20 @@ public class TerrainGenerator : MonoBehaviour
     private float biomeOffsetX;
     private float biomeOffsetY;
 
+    // NEW: externally provided world-space river mask (per-tile slice).
+    // Expected size: [width, height] with indices [x, y].
+    private float[,] externalRiverMask = null;
+
+    // NEW: Public API to set/clear external river mask
+    public void SetExternalRiverMask(float[,] mask)
+    {
+        externalRiverMask = mask;
+    }
+    public void ClearExternalRiverMask()
+    {
+        externalRiverMask = null;
+    }
+
     void Start()
     {
         InitializeSeed();
@@ -195,11 +209,43 @@ public class TerrainGenerator : MonoBehaviour
         Random.state = savedState; // restore RNG state
     }
 
+    // Helper to expand a width x height river mask to (width+1) x (height+1)
+    float[,] ExpandRiverMaskIfNeeded(float[,] mask, int targetW, int targetH)
+    {
+        int mw = mask.GetLength(0);
+        int mh = mask.GetLength(1);
+
+        // Already the desired (samples) size
+        if (mw == targetW + 1 && mh == targetH + 1)
+            return mask;
+
+        // Exact interior size: expand by duplicating last row/col
+        if (mw == targetW && mh == targetH)
+        {
+            float[,] expanded = new float[targetW + 1, targetH + 1];
+            for (int x = 0; x < targetW; x++)
+                for (int y = 0; y < targetH; y++)
+                    expanded[x, y] = mask[x, y];
+
+            // Duplicate last column into new border column
+            for (int y = 0; y < targetH; y++)
+                expanded[targetW, y] = mask[targetW - 1, y];
+
+            // Duplicate last row into new border row
+            for (int x = 0; x < targetW + 1; x++)
+                expanded[x, targetH] = expanded[x, targetH - 1];
+
+            return expanded;
+        }
+
+        // Unsupported size: return null so we can fallback
+        return null;
+    }
+
     public void Generate()
     {
         var terrain = GetComponent<Terrain>() ?? gameObject.AddComponent<Terrain>();
 
-        // Always new TerrainData each generation (safe for multi-tile worlds)
         var data = new TerrainData
         {
             heightmapResolution = Mathf.Clamp(width + 1, 33, 4097),
@@ -207,22 +253,49 @@ public class TerrainGenerator : MonoBehaviour
             alphamapResolution = Mathf.Clamp(width, 16, 2048)
         };
 
-        // HEIGHTS
+        // Base heights (width+1 x height+1)
         float[,] heights = GenerateHeights();
 
-        // RIVERS (optional)
         float[,] riverMask;
-        if (enableRivers)
-            heights = GenerateRivers(heights, out riverMask);
-        else
-            riverMask = new float[width, height]; // all zeros
 
-        // SPLATS
+        // External mask handling (accept width x height OR width+1 x height+1)
+        if (externalRiverMask != null)
+        {
+            var adjusted = ExpandRiverMaskIfNeeded(externalRiverMask, width, height);
+            if (adjusted == null)
+            {
+                Debug.LogWarning(
+                    $"External river mask size unsupported. Got {externalRiverMask.GetLength(0)}x{externalRiverMask.GetLength(1)}, " +
+                    $"expected either {width}x{height} or {width + 1}x{height + 1}. Falling back."
+                );
+                externalRiverMask = null;
+            }
+            else
+            {
+                externalRiverMask = adjusted; // ensure we now have (width+1)x(height+1)
+            }
+        }
+
+        if (externalRiverMask != null)
+        {
+            riverMask = externalRiverMask;
+            heights = CarveRiversFromMask(heights, riverMask); // riverMask can be (width+1)x(height+1)
+        }
+        else if (enableRivers)
+        {
+            // Legacy per-tile generation gives mask width x height; carving only affects interior samples.
+            heights = GenerateRivers(heights, out riverMask);
+        }
+        else
+        {
+            // Provide an empty mask sized to splat logic (use width+1 for consistency)
+            riverMask = new float[width + 1, height + 1];
+        }
+
+        // Textures (ApplyTextures tolerates both width/height and width+1/height+1)
         ApplyTextures(data, heights, riverMask);
 
-        // Unity expects [y,x]; we build [x,y]; transpose
         data.SetHeights(0, 0, TransposeHeightmap(heights));
-
         terrain.terrainData = data;
 
         var collider = GetComponent<TerrainCollider>() ?? gameObject.AddComponent<TerrainCollider>();
@@ -239,7 +312,7 @@ public class TerrainGenerator : MonoBehaviour
         return heights;
     }
 
-    // Per-tile rivers; for world-scale seamless rivers you'd centralize path generation.
+    // Per-tile rivers (kept for optional local use)
     float[,] GenerateRivers(float[,] heights, out float[,] riverMask)
     {
         riverMask = new float[width, height];
@@ -298,6 +371,36 @@ public class TerrainGenerator : MonoBehaviour
                         riverMask[nx, ny] = Mathf.Max(riverMask[nx, ny], falloff);
                     }
                 }
+            }
+        }
+        return heights;
+    }
+
+    // NEW: Carve rivers using a precomputed mask (supports [width,height] or [width+1,height+1]).
+    float[,] CarveRiversFromMask(float[,] heights, float[,] riverMask)
+    {
+        int maskW = riverMask.GetLength(0);
+        int maskH = riverMask.GetLength(1);
+
+        // Heights is [width+1, height+1]
+        for (int sx = 0; sx <= width; sx++)
+        {
+            for (int sy = 0; sy <= height; sy++)
+            {
+                // Sample mask, clamped (works for both mask sizes)
+                int mx = Mathf.Clamp(sx, 0, maskW - 1);
+                int my = Mathf.Clamp(sy, 0, maskH - 1);
+                float m = riverMask[mx, my];
+                if (m <= 0f) continue;
+
+                WorldXYFromSample(sx, sy, out float xWorld, out float yWorld);
+
+                // Deeper in salt flats (use RAW biome noise)
+                float biomeNoiseRaw = SampleBiomeNoiseRaw(xWorld, yWorld);
+                float riverDepthMultiplier = Mathf.Lerp(1.5f, 1f, biomeNoiseRaw);
+                float targetDepth = riverDepth * riverDepthMultiplier;
+
+                heights[sx, sy] = Mathf.Lerp(heights[sx, sy], targetDepth, m);
             }
         }
         return heights;
@@ -376,24 +479,30 @@ public class TerrainGenerator : MonoBehaviour
         int mapHeight = terrainData.alphamapHeight;
         float[,,] splatmapData = new float[mapHeight, mapWidth, 3];
 
+        int maskW = riverMask.GetLength(0);
+        int maskH = riverMask.GetLength(1);
+
         for (int y = 0; y < mapHeight; y++)
         {
             for (int x = 0; x < mapWidth; x++)
             {
-                // Map splat coordinates to heightmap indices
                 int hmX = Mathf.RoundToInt((float)x / (mapWidth - 1) * (width - 1));
                 int hmY = Mathf.RoundToInt((float)y / (mapHeight - 1) * (height - 1));
 
-                float river = riverMask[hmX, hmY];
+                // Safe river sampling
+                int rx = Mathf.Clamp(hmX, 0, maskW - 1);
+                int ry = Mathf.Clamp(hmY, 0, maskH - 1);
+                float river = riverMask[rx, ry];
+
                 WorldXYFromSample(hmX, hmY, out float xWorld, out float yWorld);
                 float biomeBlend = SampleBiomeBlend(xWorld, yWorld);
 
-                // Layer weights (auto normalize by assignment expectation)
                 splatmapData[y, x, 0] = biomeBlend * (1f - river);        // dunes
                 splatmapData[y, x, 1] = (1f - biomeBlend) * (1f - river); // salt
                 splatmapData[y, x, 2] = river;                            // river
             }
         }
+
         terrainData.SetAlphamaps(0, 0, splatmapData);
     }
 
@@ -410,6 +519,7 @@ public class TerrainGenerator : MonoBehaviour
     float FreqX(float cyclesPerTile) => cyclesPerTile / Mathf.Max(0.0001f, terrainWidth);
     float FreqY(float cyclesPerTile) => cyclesPerTile / Mathf.Max(0.0001f, terrainLength);
 
+    // Optional: ensure TransposeHeightmap contains the assignment
     float[,] TransposeHeightmap(float[,] heights)
     {
         int w = heights.GetLength(0);

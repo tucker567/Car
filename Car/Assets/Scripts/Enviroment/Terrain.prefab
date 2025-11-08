@@ -142,9 +142,9 @@ MonoBehaviour:
   duneHeight: 1
   windDirection: 0.6
   duneStretch: 1.5
-  minRivers: 0
-  maxRivers: 2
-  riverWidth: 20
+  minRivers: 1
+  maxRivers: 5
+  riverWidth: 100
   riverDepth: 0
   riverWindiness: 5
   riverBankSoftness: 12

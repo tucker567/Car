@@ -213,25 +213,34 @@ public class WorldGenerator : MonoBehaviour
     )
     {
         float[,] mask = new float[samplesX, samplesY];
-
         var countRng = new System.Random(baseSeed);
         int riverCount = Mathf.Clamp(countRng.Next(minRivers, maxRivers + 1), 0, int.MaxValue);
+        if (riverCount <= 0) return mask;
+
+        // Precompute kernels per distinct radius encountered (lazy)
+        System.Collections.Generic.Dictionary<int, (int dx, int dy, float f)[]> kernelCache =
+            new System.Collections.Generic.Dictionary<int, (int, int, float)[]>();
+
+        int primaryLenH = samplesX;
+        int primaryLenV = samplesY;
+
+        // Step = 1 sample instead of 0.3 -> big speed-up
+        const int pathStep = 1;
 
         for (int r = 0; r < riverCount; r++)
         {
             var rnd = new System.Random(baseSeed + 1000 * (r + 1));
             bool vertical = rnd.NextDouble() > 0.5;
 
-            int radBase = Mathf.CeilToInt(riverWidth);
-            float step = 0.3f;
+            // Shared jitter seeds
+            float wSeed = (baseSeed + r * 541) * 0.019f;
+            float wSeed2 = (baseSeed + r * 937) * 0.027f;
 
             if (!vertical)
             {
-                int len = samplesX;
-                int startY = rnd.Next(samplesY / 4, 3 * samplesY / 4);
-
-                float[] path = BuildSmoothRiverPathGlobal(
-                    len, samplesY, startY, baseSeed + r * 97,
+                int startY = rnd.Next(primaryLenV / 4, 3 * primaryLenV / 4);
+                float[] path = BuildGlobalPathFast(
+                    primaryLenH, primaryLenV, startY, baseSeed + r * 97,
                     refGen.riverLowFrequency,
                     refGen.riverHighFrequency,
                     refGen.riverLowAmplitude,
@@ -241,50 +250,51 @@ public class WorldGenerator : MonoBehaviour
                     refGen.riverRoughnessFrequency
                 );
 
-                // width jitter noise seed
-                float wSeed = (baseSeed + r * 541) * 0.019f;
                 float wFreq = Mathf.Max(0.0001f, refGen.riverWidthJitterFrequency);
 
-                for (float fx = 0; fx <= len - 1; fx += step)
+                for (int x = 0; x < primaryLenH; x += pathStep)
                 {
-                    int x0 = Mathf.FloorToInt(fx);
-                    int x1 = Mathf.Min(Mathf.CeilToInt(fx), len - 1);
-                    float t = Mathf.Clamp01(fx - x0);
-                    float centerY = Mathf.Lerp(path[x0], path[x1], t);
+                    int cYInt = Mathf.RoundToInt(path[x]);
 
-                    float dirY = path[x1] - path[x0];
-                    Vector2 perp = new Vector2(-dirY, 1f).normalized;
-
-                    // local width jitter (seamless in global space)
-                    float tWorld = fx / Mathf.Max(1f, len - 1f);
+                    float tWorld = (float)x / Mathf.Max(1, primaryLenH - 1);
                     float jitter = (Mathf.PerlinNoise(tWorld * wFreq + wSeed, wSeed) * 2f - 1f) * refGen.riverWidthJitter;
                     float localWidth = Mathf.Max(0f, riverWidth * (1f + jitter));
-                    int rad = Mathf.Max(1, Mathf.CeilToInt(localWidth));
 
-                    for (int dx = -rad; dx <= rad; dx++)
+                    if (localWidth < 1.01f)
                     {
-                        for (int dy = -rad; dy <= rad; dy++)
-                        {
-                            float dist = new Vector2(dx, dy).magnitude;
-                            if (dist > localWidth) continue;
-
-                            int nx = Mathf.Clamp(Mathf.RoundToInt(fx + perp.x * dx), 0, samplesX - 1);
-                            int ny = Mathf.Clamp(Mathf.RoundToInt(centerY + perp.y * dy), 0, samplesY - 1);
-
-                            float normalizedDist = dist / Mathf.Max(0.0001f, localWidth);
-                            float falloff = Mathf.Pow(1f - Mathf.Clamp01(normalizedDist), riverBankSoftness);
-                            mask[nx, ny] = Mathf.Max(mask[nx, ny], falloff);
-                        }
+                        Stamp(mask, x, cYInt, 1f);
+                        continue;
                     }
+
+                    int radius = Mathf.Clamp(Mathf.RoundToInt(localWidth), 1, 128);
+                    if (!kernelCache.TryGetValue(radius, out var kernel))
+                    {
+                        // Build kernel once
+                        var list = new System.Collections.Generic.List<(int, int, float)>();
+                        float rRad = radius;
+                        for (int dy = -radius; dy <= radius; dy++)
+                            for (int dx = -radius; dx <= radius; dx++)
+                            {
+                                float dist = Mathf.Sqrt(dx * dx + dy * dy);
+                                if (dist > rRad) continue;
+                                float nd = dist / rRad;
+                                float falloff = Mathf.Pow(1f - nd, riverBankSoftness);
+                                if (falloff > 0.0001f)
+                                    list.Add((dx, dy, falloff));
+                            }
+                        kernel = list.ToArray();
+                        kernelCache[radius] = kernel;
+                    }
+
+                    foreach (var (dx, dy, f) in kernel)
+                        Stamp(mask, x + dx, cYInt + dy, f);
                 }
             }
             else
             {
-                int len = samplesY;
-                int startX = rnd.Next(samplesX / 4, 3 * samplesX / 4);
-
-                float[] path = BuildSmoothRiverPathGlobal(
-                    len, samplesX, startX, baseSeed + r * 173,
+                int startX = rnd.Next(primaryLenH / 4, 3 * primaryLenH / 4);
+                float[] path = BuildGlobalPathFast(
+                    primaryLenV, primaryLenH, startX, baseSeed + r * 173,
                     refGen.riverLowFrequency,
                     refGen.riverHighFrequency,
                     refGen.riverLowAmplitude,
@@ -294,102 +304,114 @@ public class WorldGenerator : MonoBehaviour
                     refGen.riverRoughnessFrequency
                 );
 
-                float wSeed = (baseSeed + r * 937) * 0.019f;
                 float wFreq = Mathf.Max(0.0001f, refGen.riverWidthJitterFrequency);
 
-                for (float fy = 0; fy <= len - 1; fy += step)
+                for (int y = 0; y < primaryLenV; y += pathStep)
                 {
-                    int y0 = Mathf.FloorToInt(fy);
-                    int y1 = Mathf.Min(Mathf.CeilToInt(fy), len - 1);
-                    float t = Mathf.Clamp01(fy - y0);
-                    float centerX = Mathf.Lerp(path[y0], path[y1], t);
+                    int cXInt = Mathf.RoundToInt(path[y]);
 
-                    float dirX = path[y1] - path[y0];
-                    Vector2 perp = new Vector2(1f, -dirX).normalized;
-
-                    float tWorld = fy / Mathf.Max(1f, len - 1f);
-                    float jitter = (Mathf.PerlinNoise(tWorld * wFreq + wSeed, wSeed) * 2f - 1f) * refGen.riverWidthJitter;
+                    float tWorld = (float)y / Mathf.Max(1, primaryLenV - 1);
+                    float jitter = (Mathf.PerlinNoise(tWorld * wFreq + wSeed2, wSeed2) * 2f - 1f) * refGen.riverWidthJitter;
                     float localWidth = Mathf.Max(0f, riverWidth * (1f + jitter));
-                    int rad = Mathf.Max(1, Mathf.CeilToInt(localWidth));
 
-                    for (int dx = -rad; dx <= rad; dx++)
+                    if (localWidth < 1.01f)
                     {
-                        for (int dy = -rad; dy <= rad; dy++)
-                        {
-                            float dist = new Vector2(dx, dy).magnitude;
-                            if (dist > localWidth) continue;
-
-                            int nx = Mathf.Clamp(Mathf.RoundToInt(centerX + perp.x * dx), 0, samplesX - 1);
-                            int ny = Mathf.Clamp(Mathf.RoundToInt(fy + perp.y * dy), 0, samplesY - 1);
-
-                            float normalizedDist = dist / Mathf.Max(0.0001f, localWidth);
-                            float falloff = Mathf.Pow(1f - Mathf.Clamp01(normalizedDist), riverBankSoftness);
-                            mask[nx, ny] = Mathf.Max(mask[nx, ny], falloff);
-                        }
+                        Stamp(mask, cXInt, y, 1f);
+                        continue;
                     }
+
+                    int radius = Mathf.Clamp(Mathf.RoundToInt(localWidth), 1, 128);
+                    if (!kernelCache.TryGetValue(radius, out var kernel))
+                    {
+                        var list = new System.Collections.Generic.List<(int, int, float)>();
+                        float rRad = radius;
+                        for (int dy = -radius; dy <= radius; dy++)
+                            for (int dx = -radius; dx <= radius; dx++)
+                            {
+                                float dist = Mathf.Sqrt(dx * dx + dy * dy);
+                                if (dist > rRad) continue;
+                                float nd = dist / rRad;
+                                float falloff = Mathf.Pow(1f - nd, riverBankSoftness);
+                                if (falloff > 0.0001f)
+                                    list.Add((dx, dy, falloff));
+                            }
+                        kernel = list.ToArray();
+                        kernelCache[radius] = kernel;
+                    }
+
+                    foreach (var (dx, dy, f) in kernel)
+                        Stamp(mask, cXInt + dx, y + dy, f);
                 }
             }
         }
 
         return mask;
+
+        void Stamp(float[,] m, int sx, int sy, float value)
+        {
+            if ((uint)sx >= (uint)samplesX || (uint)sy >= (uint)samplesY) return;
+            if (value > m[sx, sy]) m[sx, sy] = value;
+        }
     }
 
-    float[] BuildSmoothRiverPathGlobal(
+    // Faster global path (mirrors tile fast builder)
+    float[] BuildGlobalPathFast(
         int primaryLen,
-        int perpendicularMax,
+        int perpendicularLen,
         int startPos,
         int seedBase,
         float lowFreqCycles,
         float highFreqCycles,
-        float lowAmpNorm,
-        float highAmpNorm,
+        float lowAmp,
+        float highAmp,
         int smoothPasses,
-        float roughness,              // NEW
-        float roughnessFrequency      // NEW
+        float roughness,
+        float roughnessFrequency
     )
     {
+        primaryLen = Mathf.Max(2, primaryLen);
+        perpendicularLen = Mathf.Max(2, perpendicularLen);
+
         float[] path = new float[primaryLen];
+
         float seedA = (seedBase * 0.149f) % 10000f;
         float seedB = (seedBase * 0.757f) % 10000f;
+        float seedC = (seedBase * 0.333f) % 10000f;
 
-        // 1) Base
+        float baseNorm = Mathf.Clamp01((float)startPos / (perpendicularLen - 1));
+        float lowF  = Mathf.Max(0.0001f, lowFreqCycles);
+        float highF = Mathf.Max(0.0001f, highFreqCycles);
+        float roughF = Mathf.Max(0.0001f, roughnessFrequency);
+
         for (int i = 0; i < primaryLen; i++)
         {
-            float t = (float)i / Mathf.Max(1, primaryLen - 1);
-            float drift = (Mathf.PerlinNoise(t * Mathf.Max(0.0001f, lowFreqCycles) + seedA, seedA) * 2f - 1f) * lowAmpNorm;
-            float wiggle = (Mathf.PerlinNoise(t * Mathf.Max(0.0001f, highFreqCycles) + seedB, seedB) * 2f - 1f) * highAmpNorm;
-
-            float pNorm = Mathf.Clamp01((float)startPos / Mathf.Max(1, perpendicularMax - 1) + drift + wiggle);
-            path[i] = pNorm * (perpendicularMax - 1);
+            float t = (float)i / (primaryLen - 1);
+            float drift  = (Mathf.PerlinNoise(t * lowF  + seedA, seedA) * 2f - 1f) * lowAmp;
+            float wiggle = (Mathf.PerlinNoise(t * highF + seedB, seedB) * 2f - 1f) * highAmp;
+            float val = Mathf.Clamp01(baseNorm + drift + wiggle) * (perpendicularLen - 1);
+            path[i] = val;
         }
 
-        // 2) Smooth
         if (smoothPasses > 0)
         {
-            float[] work = new float[primaryLen];
-            for (int pass = 0; pass < smoothPasses; pass++)
-            {
-                for (int k = 0; k < primaryLen; k++)
-                {
-                    float a = path[Mathf.Max(0, k - 1)];
-                    float b = path[k];
-                    float c = path[Mathf.Min(primaryLen - 1, k + 1)];
-                    work[k] = (a + b + c) / 3f;
-                }
-                var tmp = path; path = work; work = tmp;
-            }
-        }
-
-        // 3) Roughness
-        if (roughness > 0f)
-        {
-            float seedC = (seedBase * 0.333f) % 10000f;
-            float rFreq = Mathf.Max(0.0001f, roughnessFrequency);
+            float[] smoothed = new float[primaryLen];
             for (int i = 0; i < primaryLen; i++)
             {
-                float t = (float)i / Mathf.Max(1, primaryLen - 1);
-                float rough = (Mathf.PerlinNoise(t * rFreq + seedC, seedC) * 2f - 1f) * roughness;
-                path[i] = Mathf.Clamp(path[i] + rough * (perpendicularMax - 1) * 0.05f, 0f, perpendicularMax - 1);
+                float a = path[Mathf.Max(0, i - 1)];
+                float b = path[i];
+                float c = path[Mathf.Min(primaryLen - 1, i + 1)];
+                smoothed[i] = (a + b + c) / 3f;
+            }
+            path = smoothed;
+        }
+
+        if (roughness > 0f)
+        {
+            for (int i = 0; i < primaryLen; i++)
+            {
+                float t = (float)i / (primaryLen - 1);
+                float rough = (Mathf.PerlinNoise(t * roughF + seedC, seedC) * 2f - 1f) * roughness;
+                path[i] = Mathf.Clamp(path[i] + rough * (perpendicularLen - 1) * 0.05f, 0f, perpendicularLen - 1);
             }
         }
 

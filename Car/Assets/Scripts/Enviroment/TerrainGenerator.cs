@@ -336,8 +336,160 @@ public class TerrainGenerator : MonoBehaviour
         return heights;
     }
 
-    // Per-tile rivers (kept for optional local use)
+    // Precomputed falloff kernel cache (radius -> samples)
+    static class RiverKernelCache
+    {
+        // Key: radius (int). Value: (dx, dy, falloff)
+        private static readonly System.Collections.Generic.Dictionary<int, (int dx, int dy, float f)[]> _cache
+            = new System.Collections.Generic.Dictionary<int, (int, int, float)[]>();
+
+        public static (int dx, int dy, float f)[] Get(int radius, float bankSoftness)
+        {
+            if (_cache.TryGetValue(radius, out var arr)) return arr;
+            var list = new System.Collections.Generic.List<(int, int, float)>();
+            float r = radius;
+            for (int dy = -radius; dy <= radius; dy++)
+            {
+                for (int dx = -radius; dx <= radius; dx++)
+                {
+                    float dist = Mathf.Sqrt(dx * dx + dy * dy);
+                    if (dist > r) continue;
+                    float nd = dist / Mathf.Max(0.0001f, r);
+                    float falloff = Mathf.Pow(1f - nd, bankSoftness);
+                    if (falloff > 0.0001f)
+                        list.Add((dx, dy, falloff));
+                }
+            }
+            arr = list.ToArray();
+            _cache[radius] = arr;
+            return arr;
+        }
+    }
+
+    // Faster path builder: single smoothing pass + cached noise arrays
+    float[] BuildSmoothRiverPathFast(int samplesX, int samplesY, int startY, int seedBase)
+    {
+        samplesX = Mathf.Max(2, samplesX);
+        samplesY = Mathf.Max(2, samplesY);
+
+        // Cache primary drift and wiggle noise in arrays (1 Perlin call each per sample)
+        float[] drift = new float[samplesX];
+        float[] wiggle = new float[samplesX];
+
+        float lowF  = Mathf.Max(0.0001f, riverLowFrequency);
+        float highF = Mathf.Max(0.0001f, riverHighFrequency);
+        float roughF = Mathf.Max(0.0001f, riverRoughnessFrequency);
+
+        // Seeds
+        float seedA = (seedBase * 0.137f) % 10000f;
+        float seedB = (seedBase * 0.713f) % 10000f;
+        float seedC = (seedBase * 0.333f) % 10000f;
+
+        float highAmp = riverHighAmplitude * (0.2f + riverWindiness * 0.8f);
+        for (int i = 0; i < samplesX; i++)
+        {
+            float t = (float)i / (samplesX - 1);
+            drift[i]  = (Mathf.PerlinNoise(t * lowF  + seedA, seedA) * 2f - 1f) * riverLowAmplitude;
+            wiggle[i] = (Mathf.PerlinNoise(t * highF + seedB, seedB) * 2f - 1f) * highAmp;
+        }
+
+        float[] path = new float[samplesX];
+        float baseNorm = Mathf.Clamp01((float)startY / (samplesY - 1));
+        for (int i = 0; i < samplesX; i++)
+            path[i] = Mathf.Clamp01(baseNorm + drift[i] + wiggle[i]) * (samplesY - 1);
+
+        // Single smoothing pass (3-point box)
+        if (riverSmoothPasses > 0)
+        {
+            float[] smoothed = new float[samplesX];
+            for (int i = 0; i < samplesX; i++)
+            {
+                float a = path[Mathf.Max(0, i - 1)];
+                float b = path[i];
+                float c = path[Mathf.Min(samplesX - 1, i + 1)];
+                smoothed[i] = (a + b + c) / 3f;
+            }
+            path = smoothed;
+        }
+
+        // Roughness added post-smooth
+        if (riverRoughness > 0f)
+        {
+            for (int i = 0; i < samplesX; i++)
+            {
+                float t = (float)i / (samplesX - 1);
+                float rough = (Mathf.PerlinNoise(t * roughF + seedC, seedC) * 2f - 1f) * riverRoughness;
+                path[i] = Mathf.Clamp(path[i] + rough * (samplesY - 1) * 0.05f, 0f, samplesY - 1);
+            }
+        }
+
+        return path;
+    }
+
+    // Optimized per-tile river carving
     float[,] GenerateRivers(float[,] heights, out float[,] riverMask)
+    {
+        // Ensure bounds sane
+        int effectiveMin = Mathf.Max(0, minRivers);
+        int effectiveMax = Mathf.Max(effectiveMin, maxRivers);
+
+        riverMask = new float[width, height];
+        int riverCount = Random.Range(effectiveMin, effectiveMax + 1);
+        if (riverCount <= 0) return heights;
+
+        const int pathStep = 1;
+
+        for (int r = 0; r < riverCount; r++)
+        {
+            int riverSeed = seed + r * 1000;
+            int startY = Random.Range(height / 4, 3 * height / 4);
+            float[] path = BuildSmoothRiverPathFast(width, height, startY, riverSeed);
+
+            float jitterSeed = (riverSeed * 1.917f) % 10000f;
+            float wFreq = Mathf.Max(0.0001f, riverWidthJitterFrequency);
+
+            for (int x = 0; x < width; x += pathStep)
+            {
+                int x0 = x;
+                int x1 = Mathf.Min(x + pathStep, width - 1);
+                float t = (float)(x - x0) / Mathf.Max(1, x1 - x0);
+                float centerY = Mathf.Lerp(path[x0], path[x1], t);
+                int cYInt = Mathf.RoundToInt(centerY);
+
+                float tWorld = (float)x / Mathf.Max(1, width - 1);
+                float jNoise = (Mathf.PerlinNoise(tWorld * wFreq + jitterSeed, jitterSeed) * 2f - 1f) * riverWidthJitter;
+                float localWidth = riverWidth * (1f + jNoise);
+                if (localWidth < 1.01f)
+                {
+                    int nx = Mathf.Clamp(x, 0, width - 1);
+                    int ny = Mathf.Clamp(cYInt, 0, height - 1);
+                    CarveSample(heights, riverMask, nx, ny, 1f);
+                    continue;
+                }
+
+                int radius = Mathf.Clamp(Mathf.RoundToInt(localWidth), 1, 64);
+                var kernel = RiverKernelCache.Get(radius, riverBankSoftness);
+
+                int nextX = Mathf.Min(x + 1, width - 1);
+                float dirY = path[nextX] - path[x];
+                Vector2 perp = new Vector2(-dirY, 1f).normalized; // (reserved for future anisotropic stamping)
+
+                foreach (var (dx, dy, f) in kernel)
+                {
+                    int nx = x + dx;
+                    int ny = cYInt + dy;
+                    if ((uint)nx >= (uint)width || (uint)ny >= (uint)height) continue;
+                    CarveSample(heights, riverMask, nx, ny, f);
+                }
+            }
+        }
+
+        return heights;
+    }
+
+    // Legacy slower river generation retained for comparison / fallback
+    [System.Obsolete("Use GenerateRivers() (optimized) instead. This version kept for reference.")]
+    float[,] GenerateRiversLegacy(float[,] heights, out float[,] riverMask)
     {
         riverMask = new float[width, height];
         int riverCount = Random.Range(minRivers, maxRivers + 1);
@@ -345,12 +497,10 @@ public class TerrainGenerator : MonoBehaviour
         for (int r = 0; r < riverCount; r++)
         {
             int riverSeed = seed + r * 1000;
-
-            // Smooth centerline across tile width
             int startY = Random.Range(height / 4, 3 * height / 4);
             float[] riverPath = BuildSmoothRiverPath(width, height, startY, riverSeed);
 
-            float step = 0.2f; // fine sampling for smooth carving
+            float step = 0.2f;
             for (float riverX = 0; riverX < width - 1; riverX += step)
             {
                 int x0 = Mathf.FloorToInt(riverX);
@@ -358,7 +508,6 @@ public class TerrainGenerator : MonoBehaviour
                 float t = Mathf.Clamp01(riverX - x0);
                 float centerY = Mathf.Lerp(riverPath[x0], riverPath[x1], t);
 
-                // Direction derivative for perpendicular
                 float dirY = riverPath[x1] - riverPath[x0];
                 Vector2 perp = new Vector2(-dirY, 1f).normalized;
 
@@ -376,7 +525,6 @@ public class TerrainGenerator : MonoBehaviour
                         float normalizedDist = dist / Mathf.Max(0.0001f, riverWidth);
                         float falloff = Mathf.Pow(1f - Mathf.Clamp01(normalizedDist), riverBankSoftness);
 
-                        // Biome influence (raw noise)
                         WorldXYFromSample(nx, ny, out float xWorld, out float yWorld);
                         float biomeNoiseRaw = SampleBiomeNoiseRaw(xWorld, yWorld);
                         float riverDepthMultiplier = Mathf.Lerp(1.5f, 1f, biomeNoiseRaw);
@@ -389,6 +537,18 @@ public class TerrainGenerator : MonoBehaviour
             }
         }
         return heights;
+    }
+
+    // Inline carve combining biome depth logic
+    void CarveSample(float[,] heights, float[,] mask, int sx, int sy, float falloff)
+    {
+        WorldXYFromSample(sx, sy, out float xWorld, out float yWorld);
+        float biomeRaw = SampleBiomeNoiseRaw(xWorld, yWorld);
+        float depthMul = Mathf.Lerp(1.5f, 1f, biomeRaw);
+        float targetDepth = riverDepth * depthMul;
+
+        heights[sx, sy] = Mathf.Lerp(heights[sx, sy], targetDepth, falloff);
+        mask[sx, sy] = Mathf.Max(mask[sx, sy], falloff);
     }
 
     // NEW: Carve rivers using a precomputed mask (supports [width,height] or [width+1,height+1]).

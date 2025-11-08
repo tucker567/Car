@@ -11,7 +11,6 @@ GameObject:
   - component: {fileID: 8080093834453480148}
   - component: {fileID: 1764456985002069776}
   - component: {fileID: 7409946455941472214}
-  - component: {fileID: 4317964493127375990}
   - component: {fileID: 8672786043589557446}
   m_Layer: 7
   m_Name: Terrain
@@ -95,24 +94,6 @@ TerrainCollider:
   serializedVersion: 2
   m_TerrainData: {fileID: 15600000, guid: fd9a0dfaa6c85924d8f56216874ced67, type: 2}
   m_EnableTreeColliders: 1
---- !u!114 &4317964493127375990
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3976041794875615609}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: db974ff974687f24abab4254a0c5d46f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::AmbiantSounds
-  loopClip: {fileID: 8300000, guid: f6a9bd336499c25449774f92e1faed25, type: 3}
-  strongWindClip: {fileID: 8300000, guid: bae5b151155ca474ba179facfef34253, type: 3}
-  variationWindClip: {fileID: 8300000, guid: 3fad250b5199fd34ca5e029c691f99d1, type: 3}
-  minGustInterval: 7
-  maxGustInterval: 20
-  gustDuration: 2.5
 --- !u!114 &8672786043589557446
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -146,9 +127,18 @@ MonoBehaviour:
   maxRivers: 5
   riverWidth: 100
   riverDepth: 0
-  riverWindiness: 5
+  riverWindiness: 10
   riverBankSoftness: 12
   riverTextureSpread: 4.5
+  riverSmoothPasses: 2
+  riverLowFrequency: 0.5
+  riverHighFrequency: 4
+  riverLowAmplitude: 0.25
+  riverHighAmplitude: 0.05
+  riverRoughness: 0.2
+  riverRoughnessFrequency: 3
+  riverWidthJitter: 0.25
+  riverWidthJitterFrequency: 0.8
   biomeScale: 0.2
   biomeThreshold: 0.5
   biomeTransition: 0.01

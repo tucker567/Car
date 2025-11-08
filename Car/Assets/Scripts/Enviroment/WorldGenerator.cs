@@ -141,7 +141,8 @@ public class WorldGenerator : MonoBehaviour
                 samplesX, samplesY,
                 seed,
                 refGen.minRivers, refGen.maxRivers,
-                refGen.riverWidth, refGen.riverWindiness, refGen.riverBankSoftness
+                refGen.riverWidth, refGen.riverWindiness, refGen.riverBankSoftness,
+                refGen // new argument
             );
 
             // Slice per tile as (width+1) x (height+1)
@@ -207,7 +208,8 @@ public class WorldGenerator : MonoBehaviour
     float[,] GenerateGlobalRiverMaskSamples(
         int samplesX, int samplesY, int baseSeed,
         int minRivers, int maxRivers,
-        float riverWidth, float riverWindiness, float riverBankSoftness
+        float riverWidth, float riverWindiness, float riverBankSoftness,
+        TerrainGenerator refGen
     )
     {
         float[,] mask = new float[samplesX, samplesY];
@@ -217,27 +219,32 @@ public class WorldGenerator : MonoBehaviour
 
         for (int r = 0; r < riverCount; r++)
         {
-            // Each river gets its own deterministic RNG
             var rnd = new System.Random(baseSeed + 1000 * (r + 1));
             bool vertical = rnd.NextDouble() > 0.5;
 
+            int radBase = Mathf.CeilToInt(riverWidth);
+            float step = 0.3f;
+
             if (!vertical)
             {
-                // Horizontal river across samplesX
                 int len = samplesX;
-                float[] path = new float[len];
                 int startY = rnd.Next(samplesY / 4, 3 * samplesY / 4);
-                path[0] = startY;
-                float noiseScale = 0.1f;
 
-                for (int x = 1; x < len; x++)
-                {
-                    float offset = (Mathf.PerlinNoise(x * noiseScale, (baseSeed + r * 123.456f) * 0.1f) * 2f - 1f) * riverWindiness;
-                    path[x] = Mathf.Clamp(path[x - 1] + offset, 0, samplesY - 1);
-                }
+                float[] path = BuildSmoothRiverPathGlobal(
+                    len, samplesY, startY, baseSeed + r * 97,
+                    refGen.riverLowFrequency,
+                    refGen.riverHighFrequency,
+                    refGen.riverLowAmplitude,
+                    refGen.riverHighAmplitude * (0.2f + refGen.riverWindiness * 0.8f),
+                    refGen.riverSmoothPasses,
+                    refGen.riverRoughness,
+                    refGen.riverRoughnessFrequency
+                );
 
-                float step = 0.2f;
-                int rad = Mathf.CeilToInt(riverWidth);
+                // width jitter noise seed
+                float wSeed = (baseSeed + r * 541) * 0.019f;
+                float wFreq = Mathf.Max(0.0001f, refGen.riverWidthJitterFrequency);
+
                 for (float fx = 0; fx <= len - 1; fx += step)
                 {
                     int x0 = Mathf.FloorToInt(fx);
@@ -248,17 +255,23 @@ public class WorldGenerator : MonoBehaviour
                     float dirY = path[x1] - path[x0];
                     Vector2 perp = new Vector2(-dirY, 1f).normalized;
 
+                    // local width jitter (seamless in global space)
+                    float tWorld = fx / Mathf.Max(1f, len - 1f);
+                    float jitter = (Mathf.PerlinNoise(tWorld * wFreq + wSeed, wSeed) * 2f - 1f) * refGen.riverWidthJitter;
+                    float localWidth = Mathf.Max(0f, riverWidth * (1f + jitter));
+                    int rad = Mathf.Max(1, Mathf.CeilToInt(localWidth));
+
                     for (int dx = -rad; dx <= rad; dx++)
                     {
                         for (int dy = -rad; dy <= rad; dy++)
                         {
                             float dist = new Vector2(dx, dy).magnitude;
-                            if (dist > riverWidth) continue;
+                            if (dist > localWidth) continue;
 
                             int nx = Mathf.Clamp(Mathf.RoundToInt(fx + perp.x * dx), 0, samplesX - 1);
                             int ny = Mathf.Clamp(Mathf.RoundToInt(centerY + perp.y * dy), 0, samplesY - 1);
 
-                            float normalizedDist = dist / Mathf.Max(0.0001f, riverWidth);
+                            float normalizedDist = dist / Mathf.Max(0.0001f, localWidth);
                             float falloff = Mathf.Pow(1f - Mathf.Clamp01(normalizedDist), riverBankSoftness);
                             mask[nx, ny] = Mathf.Max(mask[nx, ny], falloff);
                         }
@@ -267,21 +280,23 @@ public class WorldGenerator : MonoBehaviour
             }
             else
             {
-                // Vertical river across samplesY
                 int len = samplesY;
-                float[] path = new float[len];
                 int startX = rnd.Next(samplesX / 4, 3 * samplesX / 4);
-                path[0] = startX;
-                float noiseScale = 0.1f;
 
-                for (int y = 1; y < len; y++)
-                {
-                    float offset = (Mathf.PerlinNoise(y * noiseScale, (baseSeed + r * 321.987f) * 0.1f) * 2f - 1f) * riverWindiness;
-                    path[y] = Mathf.Clamp(path[y - 1] + offset, 0, samplesX - 1);
-                }
+                float[] path = BuildSmoothRiverPathGlobal(
+                    len, samplesX, startX, baseSeed + r * 173,
+                    refGen.riverLowFrequency,
+                    refGen.riverHighFrequency,
+                    refGen.riverLowAmplitude,
+                    refGen.riverHighAmplitude * (0.2f + refGen.riverWindiness * 0.8f),
+                    refGen.riverSmoothPasses,
+                    refGen.riverRoughness,
+                    refGen.riverRoughnessFrequency
+                );
 
-                float step = 0.2f;
-                int rad = Mathf.CeilToInt(riverWidth);
+                float wSeed = (baseSeed + r * 937) * 0.019f;
+                float wFreq = Mathf.Max(0.0001f, refGen.riverWidthJitterFrequency);
+
                 for (float fy = 0; fy <= len - 1; fy += step)
                 {
                     int y0 = Mathf.FloorToInt(fy);
@@ -292,17 +307,22 @@ public class WorldGenerator : MonoBehaviour
                     float dirX = path[y1] - path[y0];
                     Vector2 perp = new Vector2(1f, -dirX).normalized;
 
+                    float tWorld = fy / Mathf.Max(1f, len - 1f);
+                    float jitter = (Mathf.PerlinNoise(tWorld * wFreq + wSeed, wSeed) * 2f - 1f) * refGen.riverWidthJitter;
+                    float localWidth = Mathf.Max(0f, riverWidth * (1f + jitter));
+                    int rad = Mathf.Max(1, Mathf.CeilToInt(localWidth));
+
                     for (int dx = -rad; dx <= rad; dx++)
                     {
                         for (int dy = -rad; dy <= rad; dy++)
                         {
                             float dist = new Vector2(dx, dy).magnitude;
-                            if (dist > riverWidth) continue;
+                            if (dist > localWidth) continue;
 
                             int nx = Mathf.Clamp(Mathf.RoundToInt(centerX + perp.x * dx), 0, samplesX - 1);
                             int ny = Mathf.Clamp(Mathf.RoundToInt(fy + perp.y * dy), 0, samplesY - 1);
 
-                            float normalizedDist = dist / Mathf.Max(0.0001f, riverWidth);
+                            float normalizedDist = dist / Mathf.Max(0.0001f, localWidth);
                             float falloff = Mathf.Pow(1f - Mathf.Clamp01(normalizedDist), riverBankSoftness);
                             mask[nx, ny] = Mathf.Max(mask[nx, ny], falloff);
                         }
@@ -312,5 +332,67 @@ public class WorldGenerator : MonoBehaviour
         }
 
         return mask;
+    }
+
+    float[] BuildSmoothRiverPathGlobal(
+        int primaryLen,
+        int perpendicularMax,
+        int startPos,
+        int seedBase,
+        float lowFreqCycles,
+        float highFreqCycles,
+        float lowAmpNorm,
+        float highAmpNorm,
+        int smoothPasses,
+        float roughness,              // NEW
+        float roughnessFrequency      // NEW
+    )
+    {
+        float[] path = new float[primaryLen];
+        float seedA = (seedBase * 0.149f) % 10000f;
+        float seedB = (seedBase * 0.757f) % 10000f;
+
+        // 1) Base
+        for (int i = 0; i < primaryLen; i++)
+        {
+            float t = (float)i / Mathf.Max(1, primaryLen - 1);
+            float drift = (Mathf.PerlinNoise(t * Mathf.Max(0.0001f, lowFreqCycles) + seedA, seedA) * 2f - 1f) * lowAmpNorm;
+            float wiggle = (Mathf.PerlinNoise(t * Mathf.Max(0.0001f, highFreqCycles) + seedB, seedB) * 2f - 1f) * highAmpNorm;
+
+            float pNorm = Mathf.Clamp01((float)startPos / Mathf.Max(1, perpendicularMax - 1) + drift + wiggle);
+            path[i] = pNorm * (perpendicularMax - 1);
+        }
+
+        // 2) Smooth
+        if (smoothPasses > 0)
+        {
+            float[] work = new float[primaryLen];
+            for (int pass = 0; pass < smoothPasses; pass++)
+            {
+                for (int k = 0; k < primaryLen; k++)
+                {
+                    float a = path[Mathf.Max(0, k - 1)];
+                    float b = path[k];
+                    float c = path[Mathf.Min(primaryLen - 1, k + 1)];
+                    work[k] = (a + b + c) / 3f;
+                }
+                var tmp = path; path = work; work = tmp;
+            }
+        }
+
+        // 3) Roughness
+        if (roughness > 0f)
+        {
+            float seedC = (seedBase * 0.333f) % 10000f;
+            float rFreq = Mathf.Max(0.0001f, roughnessFrequency);
+            for (int i = 0; i < primaryLen; i++)
+            {
+                float t = (float)i / Mathf.Max(1, primaryLen - 1);
+                float rough = (Mathf.PerlinNoise(t * rFreq + seedC, seedC) * 2f - 1f) * roughness;
+                path[i] = Mathf.Clamp(path[i] + rough * (perpendicularMax - 1) * 0.05f, 0f, perpendicularMax - 1);
+            }
+        }
+
+        return path;
     }
 }

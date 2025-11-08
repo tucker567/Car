@@ -91,6 +91,30 @@ public class TerrainGenerator : MonoBehaviour
     [Tooltip("Controls spread of river texture weighting relative to riverMask. (Currently not used directly for splats but reserved for extension.)")]
     public float riverTextureSpread = 1.2f;
 
+    // ---------------------- RIVER CURVE SETTINGS ----------------------
+    [Header("River Curve Settings")]
+    [Tooltip("Number of smoothing passes (moving average) applied to the raw noise path. 0 = none, 2-5 typical.")]
+    [Range(0, 12)] public int riverSmoothPasses = 4;
+    [Tooltip("Low frequency (broad drift) for river center curve (cycles per tile). Smaller = broader bends.")]
+    public float riverLowFrequency = 0.5f;
+    [Tooltip("High frequency (tight wiggles) for river center curve (cycles per tile).")]
+    public float riverHighFrequency = 4f;
+    [Tooltip("Amplitude (in normalized tile height 0..1) for broad drift.")]
+    [Range(0f, 0.5f)] public float riverLowAmplitude = 0.25f;
+    [Tooltip("Amplitude (in normalized tile height 0..1) for finer wiggles.")]
+    [Range(0f, 0.2f)] public float riverHighAmplitude = 0.05f;
+    [Tooltip("Adds post-smoothing wiggle to the river centerline. 0 = off, 0.1–0.35 adds natural meander noise.")]
+    [Range(0f, 1f)] public float riverRoughness = 0.2f;
+
+    [Tooltip("Frequency (cycles per tile) for river roughness noise.")]
+    public float riverRoughnessFrequency = 3f;
+
+    [Tooltip("Relative width variation of the river along its length. 0 = constant width; 0.2–0.5 looks natural.")]
+    [Range(0f, 1f)] public float riverWidthJitter = 0.25f;
+
+    [Tooltip("Frequency (cycles per tile) for width jitter.")]
+    public float riverWidthJitterFrequency = 0.8f;
+
     // ---------------------- BIOME (BASIC) ----------------------
     [Header("Biome Settings (basic)")]
     [Tooltip("Biome noise frequency as 'cycles per tile'. Lower = larger contiguous dune / salt areas. 0.08–0.25 typical.")]
@@ -321,28 +345,21 @@ public class TerrainGenerator : MonoBehaviour
         for (int r = 0; r < riverCount; r++)
         {
             int riverSeed = seed + r * 1000;
-            float[] riverPath = new float[width];
+
+            // Smooth centerline across tile width
             int startY = Random.Range(height / 4, 3 * height / 4);
-            riverPath[0] = startY;
+            float[] riverPath = BuildSmoothRiverPath(width, height, startY, riverSeed);
 
-            // Random walk with Perlin-guided offsets
-            for (int x = 1; x < width; x++)
-            {
-                float offset = (Mathf.PerlinNoise(x * 0.1f, riverSeed * 0.1f) * 2f - 1f) * riverWindiness;
-                riverPath[x] = Mathf.Clamp(riverPath[x - 1] + offset, 0, height - 1);
-            }
-
-            // Sub-sample for smooth curve carving
-            float step = 0.2f;
+            float step = 0.2f; // fine sampling for smooth carving
             for (float riverX = 0; riverX < width - 1; riverX += step)
             {
                 int x0 = Mathf.FloorToInt(riverX);
-                int x1 = Mathf.CeilToInt(riverX);
-                float t = riverX - x0;
+                int x1 = Mathf.Min(Mathf.CeilToInt(riverX), width - 1);
+                float t = Mathf.Clamp01(riverX - x0);
                 float centerY = Mathf.Lerp(riverPath[x0], riverPath[x1], t);
 
-                // Perpendicular for carving radius
-                float dirY = (x1 < width) ? (riverPath[x1] - riverPath[x0]) : 0f;
+                // Direction derivative for perpendicular
+                float dirY = riverPath[x1] - riverPath[x0];
                 Vector2 perp = new Vector2(-dirY, 1f).normalized;
 
                 int radius = Mathf.CeilToInt(riverWidth);
@@ -356,17 +373,15 @@ public class TerrainGenerator : MonoBehaviour
                         int nx = Mathf.Clamp(Mathf.RoundToInt(riverX + perp.x * dx), 0, width - 1);
                         int ny = Mathf.Clamp(Mathf.RoundToInt(centerY + perp.y * dy), 0, height - 1);
 
-                        // Bank falloff -> 0 at edge, 1 at center
-                        float normalizedDist = dist / riverWidth;
+                        float normalizedDist = dist / Mathf.Max(0.0001f, riverWidth);
                         float falloff = Mathf.Pow(1f - Mathf.Clamp01(normalizedDist), riverBankSoftness);
 
-                        // Biome-modulated depth: salt flats get deeper (using RAW noise, not inverted)
+                        // Biome influence (raw noise)
                         WorldXYFromSample(nx, ny, out float xWorld, out float yWorld);
                         float biomeNoiseRaw = SampleBiomeNoiseRaw(xWorld, yWorld);
                         float riverDepthMultiplier = Mathf.Lerp(1.5f, 1f, biomeNoiseRaw);
                         float finalRiverDepth = riverDepth * riverDepthMultiplier;
 
-                        // Carve (lerp toward finalRiverDepth)
                         heights[nx, ny] = Mathf.Lerp(heights[nx, ny], finalRiverDepth, falloff);
                         riverMask[nx, ny] = Mathf.Max(riverMask[nx, ny], falloff);
                     }
@@ -604,5 +619,66 @@ public class TerrainGenerator : MonoBehaviour
             blend = Mathf.Pow(blend, biomeContrast);
 
         return Mathf.Clamp01(blend);
+    }
+
+    // Smooth river path builder (horizontal orientation)
+    float[] BuildSmoothRiverPath(int samples, int verticalSamples, int startY, int seedBase)
+    {
+        samples = Mathf.Max(2, samples);
+        verticalSamples = Mathf.Max(2, verticalSamples);
+
+        float[] path = new float[samples];
+        float lowFreq = Mathf.Max(0.0001f, riverLowFrequency);
+        float highFreq = Mathf.Max(0.0001f, riverHighFrequency);
+
+        float seedA = (seedBase * 0.137f) % 10000f;
+        float seedB = (seedBase * 0.713f) % 10000f;
+
+        // high-frequency amplitude still scales by windiness
+        float highAmp = riverHighAmplitude * (0.2f + riverWindiness * 0.8f);
+
+        // 1) Base curve (broad drift + finer wiggle)
+        for (int x = 0; x < samples; x++)
+        {
+            float t = (float)x / (samples - 1);
+            float drift = (Mathf.PerlinNoise(t * lowFreq + seedA, seedA) * 2f - 1f) * riverLowAmplitude;
+            float wiggle = (Mathf.PerlinNoise(t * highFreq + seedB, seedB) * 2f - 1f) * highAmp;
+
+            float yNormStart = Mathf.Clamp01((float)startY / (verticalSamples - 1));
+            float yNorm = Mathf.Clamp01(yNormStart + drift + wiggle);
+            path[x] = yNorm * (verticalSamples - 1);
+        }
+
+        // 2) Smoothing passes
+        if (riverSmoothPasses > 0)
+        {
+            float[] work = new float[samples];
+            for (int pass = 0; pass < riverSmoothPasses; pass++)
+            {
+                for (int i = 0; i < samples; i++)
+                {
+                    float a = path[Mathf.Max(0, i - 1)];
+                    float b = path[i];
+                    float c = path[Mathf.Min(samples - 1, i + 1)];
+                    work[i] = (a + b + c) / 3f;
+                }
+                var tmp = path; path = work; work = tmp;
+            }
+        }
+
+        // 3) Post-smoothing roughness (adds life back without jaggies)
+        if (riverRoughness > 0f)
+        {
+            float seedC = (seedBase * 0.333f) % 10000f;
+            float roughFreq = Mathf.Max(0.0001f, riverRoughnessFrequency);
+            for (int x = 0; x < samples; x++)
+            {
+                float t = (float)x / (samples - 1);
+                float rough = (Mathf.PerlinNoise(t * roughFreq + seedC, seedC) * 2f - 1f) * riverRoughness;
+                path[x] = Mathf.Clamp(path[x] + rough * (verticalSamples - 1) * 0.05f, 0f, verticalSamples - 1);
+            }
+        }
+
+        return path;
     }
 }

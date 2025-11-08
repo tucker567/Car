@@ -5898,6 +5898,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1520580869}
   - component: {fileID: 1520580868}
+  - component: {fileID: 1520580870}
   m_Layer: 0
   m_Name: WorldGenerator
   m_TagString: Untagged
@@ -5930,6 +5931,7 @@ MonoBehaviour:
   useRandomSeed: 1
   seed: 0
   enableRivers: 0
+  useGlobalRivers: 1
 --- !u!4 &1520580869
 Transform:
   m_ObjectHideFlags: 0
@@ -5939,12 +5941,30 @@ Transform:
   m_GameObject: {fileID: 1520580867}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 455, y: 30, z: 395}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1520580870
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1520580867}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: db974ff974687f24abab4254a0c5d46f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AmbiantSounds
+  loopClip: {fileID: 8300000, guid: f6a9bd336499c25449774f92e1faed25, type: 3}
+  strongWindClip: {fileID: 8300000, guid: bae5b151155ca474ba179facfef34253, type: 3}
+  variationWindClip: {fileID: 8300000, guid: 3fad250b5199fd34ca5e029c691f99d1, type: 3}
+  minGustInterval: 7
+  maxGustInterval: 20
+  gustDuration: 2.5
 --- !u!1 &1548306301
 GameObject:
   m_ObjectHideFlags: 0

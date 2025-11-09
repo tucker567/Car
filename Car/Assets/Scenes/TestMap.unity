@@ -5918,8 +5918,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 36ab5959970ed5344b89b95df3c399e9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: '::'
-  tilesX: 10
-  tilesY: 10
+  tilesX: 5
+  tilesY: 5
   tileWorldWidth: 1000
   tileWorldLength: 1000
   heightmapResolution: 256
@@ -5928,10 +5928,58 @@ MonoBehaviour:
   autoGenerateAtStart: 1
   setNeighbors: 1
   clearExistingChildren: 1
+  useGlobalRivers: 1
+  enablePerTileFallbackRivers: 0
   useRandomSeed: 1
   seed: 0
-  enableRivers: 0
-  useGlobalRivers: 1
+  terrainSettings:
+    autoGenerate: 1
+    enableRivers: 1
+    scale: 8
+    useRandomSeed: 1
+    seed: 0
+    octaves: 4
+    persistence: 0.5
+    lacunarity: 1.4
+    duneHeight: 1
+    windDirection: 0.6
+    duneStretch: 1.5
+    minRivers: 1
+    maxRivers: 5
+    riverWidth: 100
+    riverDepth: 0
+    riverWindiness: 10
+    riverBankSoftness: 12
+    riverTextureSpread: 4.5
+    riverSmoothPasses: 4
+    riverLowFrequency: 0.5
+    riverHighFrequency: 4
+    riverLowAmplitude: 0.25
+    riverHighAmplitude: 0.05
+    riverRoughness: 0.2
+    riverRoughnessFrequency: 3
+    riverWidthJitter: 0.25
+    riverWidthJitterFrequency: 0.8
+    biomeScale: 0.2
+    biomeThreshold: 0.5
+    biomeTransition: 0.01
+    biomeOffsetScale: 0.01
+    biomeOctaves: 4
+    biomePersistence: 0.5
+    biomeLacunarity: 2.2
+    biomeUseRidged: 0
+    biomeRotationDegrees: 0
+    biomeWarpStrength: 1
+    biomeWarpScale: 0.5
+    biomeContrast: 1
+    biomeInvert: 1
+    biomeUseSeparateSeed: 0
+    biomeSeed: 0
+    duneTexture: {fileID: 2800000, guid: 7600b59d926f401409b806bf41024da0, type: 3}
+    saltFlatTexture: {fileID: 2800000, guid: 0d3ed836ce77e8a4787a2ae4f08cedf7, type: 3}
+    riverTexture: {fileID: 2800000, guid: 087c475847b768f44a3866b91bff8cf5, type: 3}
+    tileSize: 5
+    useGlobalSeamless: 1
 --- !u!4 &1520580869
 Transform:
   m_ObjectHideFlags: 0

@@ -7,39 +7,36 @@ public class WorldGenerator : MonoBehaviour
     public int tilesY = 2;
 
     [Header("Per-Tile World Size (meters)")]
-    public float tileWorldWidth = 1000f;   // Unity X per tile
-    public float tileWorldLength = 1000f;  // Unity Z per tile
+    public float tileWorldWidth = 1000f;
+    public float tileWorldLength = 1000f;
 
     [Header("Heightmap Resolution per Tile")]
-    public int heightmapResolution = 256;  // samples (width = height)
-    public int verticalDepth = 20;         // Terrain vertical scale (meters)
+    public int heightmapResolution = 256;
+    public int verticalDepth = 20;
 
-    [Header("Tile Prefab (recommended)")]
-    [Tooltip("Prefab with Terrain + TerrainCollider + TerrainGenerator configured (textures, dune settings). Optional; if null, components will be added at runtime.")]
+    [Header("Tile Prefab (optional)")]
     public GameObject tilePrefab;
 
-    [Header("Generation")]
+    [Header("Generation Flow")]
     public bool autoGenerateAtStart = true;
     public bool setNeighbors = true;
     public bool clearExistingChildren = true;
+
+    [Header("Global Rivers")]
+    public bool useGlobalRivers = true;        // keep global approach
+    public bool enablePerTileFallbackRivers = false; // if no global mask (replaces old enableRivers toggle meaning)
 
     [Header("Seed")]
     public bool useRandomSeed = true;
     public int seed = 0;
 
-    [Header("Rivers")]
-    [Tooltip("Per-tile rivers can cause seams. Recommended OFF for tiled worlds if 'Use Global Rivers' is ON.")]
-    public bool enableRivers = false;
-
-    [Tooltip("If ON, rivers are generated once across the whole world and applied seamlessly to all tiles.")]
-    public bool useGlobalRivers = true;
+    [Header("Terrain Generation Settings (moved from TerrainGenerator)")]
+    public TerrainGenerationSettings terrainSettings = new TerrainGenerationSettings();
 
     public void Start()
     {
         if (autoGenerateAtStart)
-        {
             GenerateWorld();
-        }
     }
 
     public void GenerateWorld()
@@ -49,78 +46,58 @@ public class WorldGenerator : MonoBehaviour
             for (int i = transform.childCount - 1; i >= 0; i--)
             {
                 var child = transform.GetChild(i);
-                #if UNITY_EDITOR
-                if (!Application.isPlaying)
-                    DestroyImmediate(child.gameObject);
-                else
-                    Destroy(child.gameObject);
-                #else
+#if UNITY_EDITOR
+                if (!Application.isPlaying) DestroyImmediate(child.gameObject);
+                else Destroy(child.gameObject);
+#else
                 Destroy(child.gameObject);
-                #endif
+#endif
             }
         }
 
         if (useRandomSeed)
-        {
             seed = Random.Range(0, 10000);
-        }
+
+        // Overwrite shared seed in settings (so inspector shows same)
+        terrainSettings.seed = seed;
+        terrainSettings.useRandomSeed = false; // world manages determinism
 
         Terrain[,] terrainGrid = new Terrain[tilesX, tilesY];
         TerrainGenerator[,] genGrid = new TerrainGenerator[tilesX, tilesY];
 
-        // 1) Create tiles and configure components, but do NOT generate yet.
+        // 1. Create tiles (defer actual height generation)
         for (int gy = 0; gy < tilesY; gy++)
         {
             for (int gx = 0; gx < tilesX; gx++)
             {
                 Vector3 pos = new Vector3(gx * tileWorldWidth, 0f, gy * tileWorldLength);
-                GameObject go;
-
-                if (tilePrefab != null)
-                {
-                    go = Instantiate(tilePrefab, pos, Quaternion.identity, this.transform);
-                }
-                else
-                {
-                    go = new GameObject($"Terrain_{gx}_{gy}");
-                    go.transform.parent = this.transform;
-                    go.transform.position = pos;
-                }
+                GameObject go = tilePrefab != null
+                    ? Instantiate(tilePrefab, pos, Quaternion.identity, transform)
+                    : new GameObject($"Terrain_{gx}_{gy}");
 
                 go.name = $"Terrain_{gx}_{gy}";
+                go.transform.position = pos;
+                go.transform.parent = transform;
 
-                // Ensure components
-                var terrain = go.GetComponent<Terrain>();
-                if (terrain == null) terrain = go.AddComponent<Terrain>();
+                var terrain = go.GetComponent<Terrain>() ?? go.AddComponent<Terrain>();
+                var collider = go.GetComponent<TerrainCollider>() ?? go.AddComponent<TerrainCollider>();
+                var gen = go.GetComponent<TerrainGenerator>() ?? go.AddComponent<TerrainGenerator>();
 
-                var collider = go.GetComponent<TerrainCollider>();
-                if (collider == null) collider = go.AddComponent<TerrainCollider>();
+                // Configure per-tile core dimensions
+                gen.SetDimensions(heightmapResolution, heightmapResolution, verticalDepth);
+                gen.SetWorldSize(tileWorldWidth, tileWorldLength);
+                gen.SetWorldOrigin(new Vector2(gx * tileWorldWidth, gy * tileWorldLength));
 
-                var gen = go.GetComponent<TerrainGenerator>();
-                if (gen == null) gen = go.AddComponent<TerrainGenerator>();
+                // Copy settings reference (shared object)
+                gen.ApplySettings(terrainSettings);
 
-                // Configure generator for this tile
-                gen.autoGenerate = false;
-                gen.useRandomSeed = false; // keep a shared seed for the whole world
-                gen.seed = seed;
+                // Rivers: allow per-tile generation only if global rivers disabled
+                gen.OverridePerTileRiverEnable(enablePerTileFallbackRivers && !useGlobalRivers);
 
-                gen.width = heightmapResolution;
-                gen.height = heightmapResolution;
-                gen.depth = verticalDepth;
+                // Provide global extents
+                gen.SetGlobalExtents(tilesX * tileWorldWidth, tilesY * tileWorldLength);
 
-                gen.terrainWidth = tileWorldWidth;
-                gen.terrainLength = tileWorldLength;
-
-                gen.worldOrigin = new Vector2(gx * tileWorldWidth, gy * tileWorldLength);
-
-                // Respect top-level switch but we'll override rivers with a global mask if useGlobalRivers is true
-                gen.enableRivers = enableRivers;
-
-                gen.globalWorldWidth = tilesX * tileWorldWidth;
-                gen.globalWorldLength = tilesY * tileWorldLength;
-                gen.useGlobalSeamless = true; // ensure seamless transitions
-
-                // Initialize offsets (seed etc.) but defer Generate()
+                // Initialize seeds (now driven by settings)
                 gen.InitializeSeed();
 
                 terrainGrid[gx, gy] = terrain;
@@ -128,24 +105,19 @@ public class WorldGenerator : MonoBehaviour
             }
         }
 
-        // 2) Optionally build one global river mask across entire world and slice per tile.
+        // 2. Global river mask (optional)
         if (useGlobalRivers && tilesX > 0 && tilesY > 0)
         {
-            var refGen = genGrid[0, 0];
-
-            // Height-sample counts (note +1 for shared edges)
             int samplesX = tilesX * heightmapResolution + 1;
             int samplesY = tilesY * heightmapResolution + 1;
 
             float[,] globalMask = GenerateGlobalRiverMaskSamples(
                 samplesX, samplesY,
                 seed,
-                refGen.minRivers, refGen.maxRivers,
-                refGen.riverWidth, refGen.riverWindiness, refGen.riverBankSoftness,
-                refGen // new argument
+                terrainSettings
             );
 
-            // Slice per tile as (width+1) x (height+1)
+            // Slice per tile
             for (int gy = 0; gy < tilesY; gy++)
             {
                 for (int gx = 0; gx < tilesX; gx++)
@@ -158,27 +130,20 @@ public class WorldGenerator : MonoBehaviour
                     int yStart = gy * tileH;
 
                     for (int y = 0; y <= tileH; y++)
-                    {
                         for (int x = 0; x <= tileW; x++)
-                        {
                             slice[x, y] = globalMask[xStart + x, yStart + y];
-                        }
-                    }
+
                     genGrid[gx, gy].SetExternalRiverMask(slice);
                 }
             }
         }
 
-        // 3) Now actually generate each tile.
+        // 3. Generate tiles
         for (int gy = 0; gy < tilesY; gy++)
-        {
             for (int gx = 0; gx < tilesX; gx++)
-            {
                 genGrid[gx, gy].Generate();
-            }
-        }
 
-        // 4) Neighbor links
+        // 4. Neighbor stitching
         if (setNeighbors)
         {
             for (int gy = 0; gy < tilesY; gy++)
@@ -186,18 +151,16 @@ public class WorldGenerator : MonoBehaviour
                 for (int gx = 0; gx < tilesX; gx++)
                 {
                     var t = terrainGrid[gx, gy];
-                    Terrain left   = (gx > 0)           ? terrainGrid[gx - 1, gy] : null;
-                    Terrain right  = (gx < tilesX - 1)  ? terrainGrid[gx + 1, gy] : null;
-                    Terrain bottom = (gy > 0)           ? terrainGrid[gx, gy - 1] : null;
-                    Terrain top    = (gy < tilesY - 1)  ? terrainGrid[gx, gy + 1] : null;
-
-                    // Unity's SetNeighbors signature is (left, top, right, bottom)
+                    Terrain left = (gx > 0) ? terrainGrid[gx - 1, gy] : null;
+                    Terrain right = (gx < tilesX - 1) ? terrainGrid[gx + 1, gy] : null;
+                    Terrain bottom = (gy > 0) ? terrainGrid[gx, gy - 1] : null;
+                    Terrain top = (gy < tilesY - 1) ? terrainGrid[gx, gy + 1] : null;
                     t.SetNeighbors(left, top, right, bottom);
                 }
             }
         }
 
-        // Flush terrain data to ensure all changes are applied
+        // 5. Flush
         for (int gy = 0; gy < tilesY; gy++)
             for (int gx = 0; gx < tilesX; gx++)
                 terrainGrid[gx, gy].Flush();
@@ -206,25 +169,21 @@ public class WorldGenerator : MonoBehaviour
     // Build one global river mask in height-sample space [0..samplesX-1] x [0..samplesY-1].
     // NOTE: samplesX = tilesX*tileWidthSamples + 1; samplesY = tilesY*tileHeightSamples + 1
     float[,] GenerateGlobalRiverMaskSamples(
-        int samplesX, int samplesY, int baseSeed,
-        int minRivers, int maxRivers,
-        float riverWidth, float riverWindiness, float riverBankSoftness,
-        TerrainGenerator refGen
+        int samplesX,
+        int samplesY,
+        int baseSeed,
+        TerrainGenerationSettings s
     )
     {
         float[,] mask = new float[samplesX, samplesY];
         var countRng = new System.Random(baseSeed);
-        int riverCount = Mathf.Clamp(countRng.Next(minRivers, maxRivers + 1), 0, int.MaxValue);
+        int riverCount = Mathf.Clamp(countRng.Next(s.minRivers, s.maxRivers + 1), 0, int.MaxValue);
         if (riverCount <= 0) return mask;
 
-        // Precompute kernels per distinct radius encountered (lazy)
-        System.Collections.Generic.Dictionary<int, (int dx, int dy, float f)[]> kernelCache =
-            new System.Collections.Generic.Dictionary<int, (int, int, float)[]>();
+        var kernelCache = new System.Collections.Generic.Dictionary<int, (int dx, int dy, float f)[]>();
 
         int primaryLenH = samplesX;
         int primaryLenV = samplesY;
-
-        // Step = 1 sample instead of 0.3 -> big speed-up
         const int pathStep = 1;
 
         for (int r = 0; r < riverCount; r++)
@@ -232,7 +191,6 @@ public class WorldGenerator : MonoBehaviour
             var rnd = new System.Random(baseSeed + 1000 * (r + 1));
             bool vertical = rnd.NextDouble() > 0.5;
 
-            // Shared jitter seeds
             float wSeed = (baseSeed + r * 541) * 0.019f;
             float wSeed2 = (baseSeed + r * 937) * 0.027f;
 
@@ -241,24 +199,24 @@ public class WorldGenerator : MonoBehaviour
                 int startY = rnd.Next(primaryLenV / 4, 3 * primaryLenV / 4);
                 float[] path = BuildGlobalPathFast(
                     primaryLenH, primaryLenV, startY, baseSeed + r * 97,
-                    refGen.riverLowFrequency,
-                    refGen.riverHighFrequency,
-                    refGen.riverLowAmplitude,
-                    refGen.riverHighAmplitude * (0.2f + refGen.riverWindiness * 0.8f),
-                    refGen.riverSmoothPasses,
-                    refGen.riverRoughness,
-                    refGen.riverRoughnessFrequency
+                    s.riverLowFrequency,
+                    s.riverHighFrequency,
+                    s.riverLowAmplitude,
+                    s.riverHighAmplitude * (0.2f + s.riverWindiness * 0.8f),
+                    s.riverSmoothPasses,
+                    s.riverRoughness,
+                    s.riverRoughnessFrequency
                 );
 
-                float wFreq = Mathf.Max(0.0001f, refGen.riverWidthJitterFrequency);
+                float wFreq = Mathf.Max(0.0001f, s.riverWidthJitterFrequency);
 
                 for (int x = 0; x < primaryLenH; x += pathStep)
                 {
                     int cYInt = Mathf.RoundToInt(path[x]);
 
                     float tWorld = (float)x / Mathf.Max(1, primaryLenH - 1);
-                    float jitter = (Mathf.PerlinNoise(tWorld * wFreq + wSeed, wSeed) * 2f - 1f) * refGen.riverWidthJitter;
-                    float localWidth = Mathf.Max(0f, riverWidth * (1f + jitter));
+                    float jitter = (Mathf.PerlinNoise(tWorld * wFreq + wSeed, wSeed) * 2f - 1f) * s.riverWidthJitter;
+                    float localWidth = Mathf.Max(0f, s.riverWidth * (1f + jitter));
 
                     if (localWidth < 1.01f)
                     {
@@ -269,7 +227,6 @@ public class WorldGenerator : MonoBehaviour
                     int radius = Mathf.Clamp(Mathf.RoundToInt(localWidth), 1, 128);
                     if (!kernelCache.TryGetValue(radius, out var kernel))
                     {
-                        // Build kernel once
                         var list = new System.Collections.Generic.List<(int, int, float)>();
                         float rRad = radius;
                         for (int dy = -radius; dy <= radius; dy++)
@@ -278,7 +235,7 @@ public class WorldGenerator : MonoBehaviour
                                 float dist = Mathf.Sqrt(dx * dx + dy * dy);
                                 if (dist > rRad) continue;
                                 float nd = dist / rRad;
-                                float falloff = Mathf.Pow(1f - nd, riverBankSoftness);
+                                float falloff = Mathf.Pow(1f - nd, s.riverBankSoftness);
                                 if (falloff > 0.0001f)
                                     list.Add((dx, dy, falloff));
                             }
@@ -295,24 +252,24 @@ public class WorldGenerator : MonoBehaviour
                 int startX = rnd.Next(primaryLenH / 4, 3 * primaryLenH / 4);
                 float[] path = BuildGlobalPathFast(
                     primaryLenV, primaryLenH, startX, baseSeed + r * 173,
-                    refGen.riverLowFrequency,
-                    refGen.riverHighFrequency,
-                    refGen.riverLowAmplitude,
-                    refGen.riverHighAmplitude * (0.2f + refGen.riverWindiness * 0.8f),
-                    refGen.riverSmoothPasses,
-                    refGen.riverRoughness,
-                    refGen.riverRoughnessFrequency
+                    s.riverLowFrequency,
+                    s.riverHighFrequency,
+                    s.riverLowAmplitude,
+                    s.riverHighAmplitude * (0.2f + s.riverWindiness * 0.8f),
+                    s.riverSmoothPasses,
+                    s.riverRoughness,
+                    s.riverRoughnessFrequency
                 );
 
-                float wFreq = Mathf.Max(0.0001f, refGen.riverWidthJitterFrequency);
+                float wFreq = Mathf.Max(0.0001f, s.riverWidthJitterFrequency);
 
                 for (int y = 0; y < primaryLenV; y += pathStep)
                 {
                     int cXInt = Mathf.RoundToInt(path[y]);
 
                     float tWorld = (float)y / Mathf.Max(1, primaryLenV - 1);
-                    float jitter = (Mathf.PerlinNoise(tWorld * wFreq + wSeed2, wSeed2) * 2f - 1f) * refGen.riverWidthJitter;
-                    float localWidth = Mathf.Max(0f, riverWidth * (1f + jitter));
+                    float jitter = (Mathf.PerlinNoise(tWorld * wFreq + wSeed2, wSeed2) * 2f - 1f) * s.riverWidthJitter;
+                    float localWidth = Mathf.Max(0f, s.riverWidth * (1f + jitter));
 
                     if (localWidth < 1.01f)
                     {
@@ -331,7 +288,7 @@ public class WorldGenerator : MonoBehaviour
                                 float dist = Mathf.Sqrt(dx * dx + dy * dy);
                                 if (dist > rRad) continue;
                                 float nd = dist / rRad;
-                                float falloff = Mathf.Pow(1f - nd, riverBankSoftness);
+                                float falloff = Mathf.Pow(1f - nd, s.riverBankSoftness);
                                 if (falloff > 0.0001f)
                                     list.Add((dx, dy, falloff));
                             }

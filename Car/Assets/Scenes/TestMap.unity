@@ -5925,7 +5925,8 @@ MonoBehaviour:
   heightmapResolution: 256
   verticalDepth: 20
   tilePrefab: {fileID: 3976041794875615609, guid: df70b1fa78306df4387d9a4970d85843, type: 3}
-  autoGenerateAtStart: 1
+  generateAsync: 1
+  autoGenerateAtStart: 0
   setNeighbors: 1
   clearExistingChildren: 1
   useGlobalRivers: 1

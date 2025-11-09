@@ -1,3 +1,5 @@
+using System;
+using System.Collections;
 using UnityEngine;
 
 public class WorldGenerator : MonoBehaviour
@@ -17,14 +19,18 @@ public class WorldGenerator : MonoBehaviour
     [Header("Tile Prefab (optional)")]
     public GameObject tilePrefab;
 
+    // Async + reporting
+    [Header("Async Generation & Reporting")]
+    public bool generateAsync = true;
+
     [Header("Generation Flow")]
     public bool autoGenerateAtStart = true;
     public bool setNeighbors = true;
     public bool clearExistingChildren = true;
 
     [Header("Global Rivers")]
-    public bool useGlobalRivers = true;        // keep global approach
-    public bool enablePerTileFallbackRivers = false; // if no global mask (replaces old enableRivers toggle meaning)
+    public bool useGlobalRivers = true;
+    public bool enablePerTileFallbackRivers = false;
 
     [Header("Seed")]
     public bool useRandomSeed = true;
@@ -33,9 +39,21 @@ public class WorldGenerator : MonoBehaviour
     [Header("Terrain Generation Settings (moved from TerrainGenerator)")]
     public TerrainGenerationSettings terrainSettings = new TerrainGenerationSettings();
 
+
+    public event Action<string> OnNote;
+    public event Action<float> OnProgress;
+    public event Action OnGenerationComplete;
+
+    void Note(string msg) => OnNote?.Invoke(msg);
+    void Progress(float p) => OnProgress?.Invoke(Mathf.Clamp01(p));
+
     public void Start()
     {
-        if (autoGenerateAtStart)
+        if (!autoGenerateAtStart) return;
+
+        if (generateAsync)
+            StartCoroutine(GenerateWorldAsync());
+        else
             GenerateWorld();
     }
 
@@ -56,7 +74,7 @@ public class WorldGenerator : MonoBehaviour
         }
 
         if (useRandomSeed)
-            seed = Random.Range(0, 10000);
+            seed = UnityEngine.Random.Range(0, 10000);
 
         // Overwrite shared seed in settings (so inspector shows same)
         terrainSettings.seed = seed;
@@ -373,5 +391,176 @@ public class WorldGenerator : MonoBehaviour
         }
 
         return path;
+    }
+
+    // Async coroutine that mirrors GenerateWorld but yields and reports progress/notes.
+    public IEnumerator GenerateWorldAsync()
+    {
+        // Compute a rough step count for progress
+        int total = 0;
+        total += tilesX * tilesY;                    // create tiles
+        total += useGlobalRivers ? 1 : 0;            // global rivers
+        total += tilesX * tilesY;                    // per-tile generate
+        total += setNeighbors ? tilesX * tilesY : 0; // stitch
+        total += tilesX * tilesY;                    // flush
+
+        int done = 0;
+        void Step(string msg, int inc)
+        {
+            done += inc;
+            Note(msg);
+            Progress(total > 0 ? (float)done / total : 0f);
+        }
+
+        Note("Preparing world...");
+        yield return null;
+
+        // Clear existing children
+        if (clearExistingChildren)
+        {
+            for (int i = transform.childCount - 1; i >= 0; i--)
+            {
+                var child = transform.GetChild(i);
+#if UNITY_EDITOR
+                if (!Application.isPlaying) DestroyImmediate(child.gameObject);
+                else Destroy(child.gameObject);
+#else
+                Destroy(child.gameObject);
+#endif
+                yield return null;
+            }
+        }
+
+        if (useRandomSeed)
+            seed = UnityEngine.Random.Range(0, 10000);
+
+        // Overwrite shared seed in settings (so inspector shows same)
+        terrainSettings.seed = seed;
+        terrainSettings.useRandomSeed = false;
+
+        Terrain[,] terrainGrid = new Terrain[tilesX, tilesY];
+        TerrainGenerator[,] genGrid = new TerrainGenerator[tilesX, tilesY];
+
+        // 1. Create tiles
+        Note("Creating terrain tiles...");
+        for (int gy = 0; gy < tilesY; gy++)
+        {
+            for (int gx = 0; gx < tilesX; gx++)
+            {
+                Vector3 pos = new Vector3(gx * tileWorldWidth, 0f, gy * tileWorldLength);
+                GameObject go = tilePrefab != null
+                    ? Instantiate(tilePrefab, pos, Quaternion.identity, transform)
+                    : new GameObject($"Terrain_{gx}_{gy}");
+
+                go.name = $"Terrain_{gx}_{gy}";
+                go.transform.position = pos;
+                go.transform.parent = transform;
+
+                var terrain = go.GetComponent<Terrain>() ?? go.AddComponent<Terrain>();
+                var collider = go.GetComponent<TerrainCollider>() ?? go.AddComponent<TerrainCollider>();
+                var gen = go.GetComponent<TerrainGenerator>() ?? go.AddComponent<TerrainGenerator>();
+
+                gen.SetDimensions(heightmapResolution, heightmapResolution, verticalDepth);
+                gen.SetWorldSize(tileWorldWidth, tileWorldLength);
+                gen.SetWorldOrigin(new Vector2(gx * tileWorldWidth, gy * tileWorldLength));
+                gen.ApplySettings(terrainSettings);
+                gen.OverridePerTileRiverEnable(enablePerTileFallbackRivers && !useGlobalRivers);
+                gen.SetGlobalExtents(tilesX * tileWorldWidth, tilesY * tileWorldLength);
+                gen.InitializeSeed();
+
+                terrainGrid[gx, gy] = terrain;
+                genGrid[gx, gy] = gen;
+
+                Step($"Created tile {gx},{gy}", 1);
+                yield return null;
+            }
+        }
+
+        // 2. Global river mask (optional)
+        if (useGlobalRivers && tilesX > 0 && tilesY > 0)
+        {
+            Note("Building global rivers...");
+            yield return null;
+
+            int samplesX = tilesX * heightmapResolution + 1;
+            int samplesY = tilesY * heightmapResolution + 1;
+
+            float[,] globalMask = GenerateGlobalRiverMaskSamples(
+                samplesX, samplesY,
+                seed,
+                terrainSettings
+            );
+
+            // Slice per tile
+            for (int gy = 0; gy < tilesY; gy++)
+            {
+                for (int gx = 0; gx < tilesX; gx++)
+                {
+                    int tileW = heightmapResolution;
+                    int tileH = heightmapResolution;
+
+                    float[,] slice = new float[tileW + 1, tileH + 1];
+                    int xStart = gx * tileW;
+                    int yStart = gy * tileH;
+
+                    for (int y = 0; y <= tileH; y++)
+                        for (int x = 0; x <= tileW; x++)
+                            slice[x, y] = globalMask[xStart + x, yStart + y];
+
+                    genGrid[gx, gy].SetExternalRiverMask(slice);
+                }
+            }
+
+            Step("Rivers prepared", 1);
+            yield return null;
+        }
+
+        // 3. Generate tiles
+        for (int gy = 0; gy < tilesY; gy++)
+        {
+            for (int gx = 0; gx < tilesX; gx++)
+            {
+                Note($"Generating tile {gx},{gy}...");
+                genGrid[gx, gy].Generate();
+                Step($"Generated tile {gx},{gy}", 1);
+                yield return null;
+            }
+        }
+
+        // 4. Neighbor stitching
+        if (setNeighbors)
+        {
+            Note("Stitching neighbors...");
+            for (int gy = 0; gy < tilesY; gy++)
+            {
+                for (int gx = 0; gx < tilesX; gx++)
+                {
+                    var t = terrainGrid[gx, gy];
+                    Terrain left = (gx > 0) ? terrainGrid[gx - 1, gy] : null;
+                    Terrain right = (gx < tilesX - 1) ? terrainGrid[gx + 1, gy] : null;
+                    Terrain bottom = (gy > 0) ? terrainGrid[gx, gy - 1] : null;
+                    Terrain top = (gy < tilesY - 1) ? terrainGrid[gx, gy + 1] : null;
+                    t.SetNeighbors(left, top, right, bottom);
+                    Step($"Stitched tile {gx},{gy}", 1);
+                    yield return null;
+                }
+            }
+        }
+
+        // 5. Flush
+        Note("Finalizing...");
+        for (int gy = 0; gy < tilesY; gy++)
+        {
+            for (int gx = 0; gx < tilesX; gx++)
+            {
+                terrainGrid[gx, gy].Flush();
+                Step($"Finalized tile {gx},{gy}", 1);
+                yield return null;
+            }
+        }
+
+        Progress(1f);
+        Note("World ready!");
+        OnGenerationComplete?.Invoke();
     }
 }

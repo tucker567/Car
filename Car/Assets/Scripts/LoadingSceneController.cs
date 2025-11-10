@@ -38,6 +38,7 @@ public class LoadingPanelController : MonoBehaviour
     List<GameObject> _gameplayUIRoots = new List<GameObject>();
 
     bool started;
+    bool worldReady = false;
     WorldGenerator worldGen;
     Scene menuSceneRef;
 
@@ -97,18 +98,31 @@ public class LoadingPanelController : MonoBehaviour
         worldGen.OnNote += SetNote;
         worldGen.OnGenerationComplete += OnWorldReady;
 
+        Debug.Log("[Load] Starting world generation...");
+        
         // Run generation
         yield return worldGen.StartCoroutine(worldGen.GenerateWorldAsync());
+        
+        // Check if completion was already called via event
+        if (_gameplayUIRoots.Count == 0)
+        {
+            Debug.LogWarning("[Load] World generation completed but OnGenerationComplete may not have been called properly");
+            // Force call OnWorldReady as fallback
+            OnWorldReady();
+        }
+        
         // Completion handled in OnWorldReady
     }
 
     void CollectGameplayUIRoots(Scene worldScene)
     {
         _gameplayUIRoots.Clear();
+        Debug.Log($"[Load] Collecting UI roots from world scene: {worldScene.name}");
 
         // 1. Tag-based
         if (!string.IsNullOrEmpty(gameplayUITag))
         {
+            Debug.Log($"[Load] Searching for UI objects with tag: {gameplayUITag}");
             // FindWithTag only searches active objects; use scene roots enumeration
             foreach (var root in worldScene.GetRootGameObjects())
             {
@@ -116,7 +130,10 @@ public class LoadingPanelController : MonoBehaviour
                 foreach (var t in tagged)
                 {
                     if (t.gameObject.CompareTag(gameplayUITag))
+                    {
+                        Debug.Log($"[Load] Found tagged UI object: {t.gameObject.name}");
                         _gameplayUIRoots.Add(t.gameObject);
+                    }
                 }
             }
         }
@@ -124,6 +141,7 @@ public class LoadingPanelController : MonoBehaviour
         // 2. Name-based
         if (gameplayUIObjectNames != null && gameplayUIObjectNames.Length > 0)
         {
+            Debug.Log($"[Load] Searching for UI objects by name: [{string.Join(", ", gameplayUIObjectNames)}]");
             HashSet<string> nameSet = new HashSet<string>(gameplayUIObjectNames);
             foreach (var root in worldScene.GetRootGameObjects())
             {
@@ -131,7 +149,10 @@ public class LoadingPanelController : MonoBehaviour
                 foreach (var t in all)
                 {
                     if (nameSet.Contains(t.gameObject.name))
+                    {
+                        Debug.Log($"[Load] Found named UI object: {t.gameObject.name}");
                         _gameplayUIRoots.Add(t.gameObject);
+                    }
                 }
             }
         }
@@ -139,13 +160,23 @@ public class LoadingPanelController : MonoBehaviour
         // 3. Auto-find canvases
         if (autoFindWorldCanvases)
         {
+            Debug.Log("[Load] Auto-searching for Canvas components in world scene");
             foreach (var root in worldScene.GetRootGameObjects())
             {
+                Debug.Log($"[Load] Checking root object: {root.name}");
                 var canvases = root.GetComponentsInChildren<Canvas>(true);
+                Debug.Log($"[Load] Found {canvases.Length} canvases in {root.name}");
+                
                 foreach (var c in canvases)
                 {
                     // Skip panelRoot if it ended up moved into world scene somehow
-                    if (panelRoot != null && c.gameObject == panelRoot) continue;
+                    if (panelRoot != null && c.gameObject == panelRoot)
+                    {
+                        Debug.Log($"[Load] Skipping loading panel canvas: {c.gameObject.name}");
+                        continue;
+                    }
+                    
+                    Debug.Log($"[Load] Adding canvas to UI roots: {c.gameObject.name}");
                     _gameplayUIRoots.Add(c.gameObject);
                 }
             }
@@ -154,8 +185,15 @@ public class LoadingPanelController : MonoBehaviour
         // 4. Merge manually assigned
         if (additionalGameplayUIRoots != null)
         {
+            Debug.Log($"[Load] Adding {additionalGameplayUIRoots.Length} additional UI roots");
             foreach (var go in additionalGameplayUIRoots)
-                if (go != null) _gameplayUIRoots.Add(go);
+            {
+                if (go != null)
+                {
+                    Debug.Log($"[Load] Adding additional UI root: {go.name}");
+                    _gameplayUIRoots.Add(go);
+                }
+            }
         }
 
         // 5. Deduplicate
@@ -165,6 +203,13 @@ public class LoadingPanelController : MonoBehaviour
         }
         var unique = new HashSet<GameObject>(_gameplayUIRoots);
         _gameplayUIRoots = new List<GameObject>(unique);
+        
+        Debug.Log($"[Load] Final UI roots count: {_gameplayUIRoots.Count}");
+        if (_gameplayUIRoots.Count == 0)
+        {
+            Debug.LogWarning("[Load] WARNING: No UI roots found! UI activation will not work.");
+            Debug.LogWarning($"[Load] autoFindWorldCanvases={autoFindWorldCanvases}, gameplayUITag='{gameplayUITag}', gameplayUIObjectNames.Length={gameplayUIObjectNames?.Length ?? 0}");
+        }
     }
 
     void SetNote(string msg)
@@ -175,6 +220,13 @@ public class LoadingPanelController : MonoBehaviour
 
     void OnWorldReady()
     {
+        if (worldReady) 
+        {
+            Debug.LogWarning("[Load] OnWorldReady called multiple times, ignoring");
+            return;
+        }
+        worldReady = true;
+        
         SetNote("World ready!");
 
         worldGen.OnNote -= SetNote;
@@ -218,8 +270,29 @@ public class LoadingPanelController : MonoBehaviour
 
     void EnableGameplayUINow()
     {
+        Debug.Log($"[Load] Attempting to enable {_gameplayUIRoots.Count} gameplay UI roots");
+        
+        int enabledCount = 0;
         foreach (var go in _gameplayUIRoots)
-            if (go != null) go.SetActive(true);
+        {
+            if (go != null)
+            {
+                Debug.Log($"[Load] Enabling UI root: {go.name}");
+                go.SetActive(true);
+                enabledCount++;
+            }
+            else
+            {
+                Debug.LogWarning("[Load] Found null UI root in collection");
+            }
+        }
+        
+        Debug.Log($"[Load] Successfully enabled {enabledCount} UI roots");
+        
+        if (enabledCount == 0)
+        {
+            Debug.LogWarning("[Load] No UI roots were found or enabled! Check world scene for Canvas components.");
+        }
     }
 
     IEnumerator FadeAndHide(CanvasGroup cg, float duration)
@@ -234,5 +307,20 @@ public class LoadingPanelController : MonoBehaviour
         }
         cg.alpha = 0f;
         cg.gameObject.SetActive(false);
+    }
+
+    // Public method for debugging - manually activate UI
+    [System.Obsolete("For debugging only")]
+    public void ForceActivateGameplayUI()
+    {
+        Debug.Log("[Load] Force activating gameplay UI (debug method)");
+        EnableGameplayUINow();
+    }
+
+    // close the game button
+    public void CloseGame()
+    {
+        Debug.Log("[Load] CloseGame called, quitting application.");
+        Application.Quit();
     }
 }

@@ -6,6 +6,7 @@ TagManager:
   tags:
   - AICar
   - playerCar
+  - GamePlayUI
   layers:
   - Default
   - TransparentFX

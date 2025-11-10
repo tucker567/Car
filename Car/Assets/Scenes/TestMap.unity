@@ -132,7 +132,7 @@ GameObject:
   - component: {fileID: 244746183}
   m_Layer: 5
   m_Name: SongName - Text (TMP)
-  m_TagString: Untagged
+  m_TagString: GamePlayUI
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -268,7 +268,7 @@ GameObject:
   - component: {fileID: 277618485}
   m_Layer: 5
   m_Name: Health - Text (TMP)
-  m_TagString: Untagged
+  m_TagString: GamePlayUI
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -574,7 +574,7 @@ GameObject:
   - component: {fileID: 404023477}
   m_Layer: 5
   m_Name: Album - Text (TMP)
-  m_TagString: Untagged
+  m_TagString: GamePlayUI
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -5815,7 +5815,7 @@ GameObject:
   - component: {fileID: 1086850592}
   m_Layer: 5
   m_Name: Radio
-  m_TagString: Untagged
+  m_TagString: GamePlayUI
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -6027,7 +6027,7 @@ GameObject:
   - component: {fileID: 1548306303}
   m_Layer: 5
   m_Name: Boost - Text (TMP)
-  m_TagString: Untagged
+  m_TagString: GamePlayUI
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -6225,12 +6225,12 @@ GameObject:
   - component: {fileID: 2084423715}
   - component: {fileID: 2084423714}
   m_Layer: 5
-  m_Name: Canvas
-  m_TagString: Untagged
+  m_Name: GamePlay - Canvas
+  m_TagString: GamePlayUI
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &2084423714
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6478,6 +6478,10 @@ PrefabInstance:
     - target: {fileID: 5543575459437453721, guid: 68eaab8ef200f1348bde67b6f908bf99, type: 3}
       propertyPath: m_Name
       value: WayPoint - Image
+      objectReference: {fileID: 0}
+    - target: {fileID: 5543575459437453721, guid: 68eaab8ef200f1348bde67b6f908bf99, type: 3}
+      propertyPath: m_TagString
+      value: GamePlayUI
       objectReference: {fileID: 0}
     - target: {fileID: 6633188147973635184, guid: 68eaab8ef200f1348bde67b6f908bf99, type: 3}
       propertyPath: m_Pivot.x

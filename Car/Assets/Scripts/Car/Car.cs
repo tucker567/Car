@@ -8,7 +8,7 @@ public class Car : MonoBehaviour
 {
     [Header("Boost/Heat System")]
     public float maxHeat = 100f;
-    public float heat = 0f;
+    public float heat = 0f; // Current heat level
     public float heatGainRate = 40f; // per second while boosting
     public float heatCoolRate = 20f; // per second while not boosting
     public float overheatCoolRate = 5f; // per second while overheated
@@ -16,7 +16,7 @@ public class Car : MonoBehaviour
     public TMP_Text boostText; // Assign in Inspector
     private bool boosting = false;
     private bool overheated = false;
-    public float overheatSlowMultiplier = 0.5f; // Car speed when overheated
+    public float overheatSlowMultiplier = 0.5f; // Car speed when overheated, larger the number, the slower
 
     [Header("Car Components")]
     public Rigidbody rigid;

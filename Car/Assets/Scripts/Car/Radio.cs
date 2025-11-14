@@ -28,6 +28,49 @@ public class Radio : MonoBehaviour
 
     private List<int> shuffledOrder = new List<int>();
 
+    void Awake()
+    {
+        // albumText
+        if (albumText == null)
+        {
+            albumText = GameObject.Find("Canvas/AlbumText")?.GetComponent<TMP_Text>();
+            if (albumText == null) albumText = GameObject.Find("AlbumText")?.GetComponent<TMP_Text>();
+            if (albumText == null)
+            {
+                GameObject byTag = null;
+                try { byTag = GameObject.FindGameObjectWithTag("AlbumText"); } catch { }
+                if (byTag != null) albumText = byTag.GetComponent<TMP_Text>();
+            }
+            if (albumText == null)
+            {
+                var all = Resources.FindObjectsOfTypeAll<TMP_Text>();
+                foreach (var t in all) { if (t != null && t.name == "AlbumText") { albumText = t; break; } }
+            }
+            if (albumText == null)
+                Debug.LogWarning("[Radio] albumText not found. Assign, name, or tag it 'AlbumText'.");
+        }
+
+        // songText
+        if (songText == null)
+        {
+            songText = GameObject.Find("Canvas/SongText")?.GetComponent<TMP_Text>();
+            if (songText == null) songText = GameObject.Find("SongText")?.GetComponent<TMP_Text>();
+            if (songText == null)
+            {
+                GameObject byTag = null;
+                try { byTag = GameObject.FindGameObjectWithTag("SongText"); } catch { }
+                if (byTag != null) songText = byTag.GetComponent<TMP_Text>();
+            }
+            if (songText == null)
+            {
+                var all = Resources.FindObjectsOfTypeAll<TMP_Text>();
+                foreach (var t in all) { if (t != null && t.name == "SongText") { songText = t; break; } }
+            }
+            if (songText == null)
+                Debug.LogWarning("[Radio] songText not found. Assign, name, or tag it 'SongText'.");
+        }
+    }
+
     void Start()
     {
         if (audioSource != null)

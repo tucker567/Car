@@ -13,7 +13,7 @@ public class Car : MonoBehaviour
     public float heatCoolRate = 20f; // per second while not boosting
     public float overheatCoolRate = 5f; // per second while overheated
     public float boostForce = 5000f;
-    public TMP_Text boostText; // Assign in Inspector
+    public TMP_Text BoostText;
     private bool boosting = false;
     private bool overheated = false;
     public float overheatSlowMultiplier = 0.5f; // Car speed when overheated, larger the number, the slower
@@ -68,6 +68,42 @@ public class Car : MonoBehaviour
         // Add this to auto-find CarHealth if not assigned
         if (carHealth == null)
             carHealth = GetComponent<CarHealth>();
+
+        // Auto-find BoostText deterministically if not assigned
+        if (BoostText == null)
+        {
+            // 1) Prefer exact path under Canvas (adjust if your path differs)
+            BoostText = GameObject.Find("Canvas/BoostText")?.GetComponent<TMP_Text>();
+
+            // 2) Fallback: object named exactly "BoostText"
+            if (BoostText == null)
+                BoostText = GameObject.Find("BoostText")?.GetComponent<TMP_Text>();
+
+            // 3) Optional: find via tag (set your TMP object tag to "BoostText")
+            if (BoostText == null)
+            {
+                GameObject byTag = null;
+                try { byTag = GameObject.FindGameObjectWithTag("BoostText"); } catch { /* tag may not exist */ }
+                if (byTag != null) BoostText = byTag.GetComponent<TMP_Text>();
+            }
+
+            // 4) Last-resort: scan loaded TMP_Texts and pick exact name
+            if (BoostText == null)
+            {
+                var all = Resources.FindObjectsOfTypeAll<TMP_Text>();
+                foreach (var t in all)
+                {
+                    if (t != null && t.name == "BoostText")
+                    {
+                        BoostText = t;
+                        break;
+                    }
+                }
+            }
+
+            if (BoostText == null)
+                Debug.LogWarning("[Car] BoostText not found. Assign in Inspector, name it 'BoostText', place it at 'Canvas/BoostText', or tag it 'BoostText'.");
+        }
     }
 
     bool unstuckInProgress = false;
@@ -121,12 +157,12 @@ public class Car : MonoBehaviour
         }
 
         // Update TMP text
-        if (boostText != null)
+        if (BoostText != null)
         {
             if (overheated)
-                boostText.text = $"HEAT: {Mathf.FloorToInt(heat)} (OVERHEATED)";
+                BoostText.text = $"HEAT: {Mathf.FloorToInt(heat)} (OVERHEATED)";
             else
-                boostText.text = $"HEAT: {Mathf.FloorToInt(heat)}";
+                BoostText.text = $"HEAT: {Mathf.FloorToInt(heat)}";
         }
 
         if (moveAction != null)

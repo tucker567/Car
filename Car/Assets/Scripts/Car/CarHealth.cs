@@ -22,7 +22,6 @@ public class CarHealth : MonoBehaviour
     {
         currentHealth = maxHealth;
         parts.Clear();
-        // In Awake(), this already finds all child Rigidbodies (including wheels if set up right)
         foreach (var rb in GetComponentsInChildren<Rigidbody>())
         {
             if (rb.gameObject != this.gameObject)
@@ -31,10 +30,31 @@ public class CarHealth : MonoBehaviour
                 parts.Add(rb);
             }
         }
+
+        // Auto-find healthText deterministically if not assigned
+        if (healthText == null)
+        {
+            healthText = GameObject.Find("Canvas/HealthText")?.GetComponent<TMP_Text>();
+            if (healthText == null) healthText = GameObject.Find("HealthText")?.GetComponent<TMP_Text>();
+            if (healthText == null)
+            {
+                GameObject byTag = null;
+                try { byTag = GameObject.FindGameObjectWithTag("HealthText"); } catch { }
+                if (byTag != null) healthText = byTag.GetComponent<TMP_Text>();
+            }
+            if (healthText == null)
+            {
+                var all = Resources.FindObjectsOfTypeAll<TMP_Text>();
+                foreach (var t in all) { if (t != null && t.name == "HealthText") { healthText = t; break; } }
+            }
+            if (healthText == null)
+                Debug.LogWarning("[CarHealth] healthText not found. Assign, name, or tag it 'HealthText'.");
+        }
+
         if (isPlayerCar)
-            UpdateHealthUI();
+            UpdateHealthUI();            // Ensures initial text now that we have (or tried to find) it
         else if (healthText != null)
-            healthText.gameObject.SetActive(false); // Disable health text for AI
+            healthText.gameObject.SetActive(false); // Disable for AI
     }
 
     public void TakeDamage(float amount)

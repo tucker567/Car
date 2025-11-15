@@ -23,6 +23,8 @@ public class SpawnCar : MonoBehaviour
     public Transform spawnPoint;
     public Camera mainCamera;
 
+    public GameObject Titlesceane;
+
     // Runtime reference to the spawned car
     private GameObject spawnedCar;
 
@@ -134,6 +136,7 @@ public class SpawnCar : MonoBehaviour
         {
             Debug.LogWarning("[SpawnCar] CameraController not found on mainCamera.");
         }
+        Titlesceane.SetActive(false);
     }
 
 #if UNITY_EDITOR

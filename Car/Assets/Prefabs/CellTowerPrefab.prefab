@@ -9,9 +9,10 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 3039072467913620767}
+  - component: {fileID: 2051526476873017712}
   m_Layer: 0
   m_Name: CellTowerPrefab
-  m_TagString: Untagged
+  m_TagString: CellTower
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -32,6 +33,27 @@ Transform:
   - {fileID: 911863397687324339}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!135 &2051526476873017712
+SphereCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4430317042721807374}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Radius: 30
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1001 &805352206850591064
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -88,13 +110,33 @@ PrefabInstance:
       propertyPath: m_LocalScale.y
       value: 175
       objectReference: {fileID: 0}
+    - target: {fileID: -2421111369278860663, guid: cf1b058ce87a0914da6a0edc3d78bd93, type: 3}
+      propertyPath: m_TagString
+      value: CellTower
+      objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: cf1b058ce87a0914da6a0edc3d78bd93, type: 3}
       propertyPath: m_Name
       value: cell-tower-model
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: cf1b058ce87a0914da6a0edc3d78bd93, type: 3}
+      propertyPath: m_TagString
+      value: CellTower
+      objectReference: {fileID: 0}
+    - target: {fileID: 1411222079455944054, guid: cf1b058ce87a0914da6a0edc3d78bd93, type: 3}
+      propertyPath: m_TagString
+      value: CellTower
+      objectReference: {fileID: 0}
+    - target: {fileID: 1546817819747385382, guid: cf1b058ce87a0914da6a0edc3d78bd93, type: 3}
+      propertyPath: m_TagString
+      value: CellTower
+      objectReference: {fileID: 0}
     - target: {fileID: 5056186859694122575, guid: cf1b058ce87a0914da6a0edc3d78bd93, type: 3}
       propertyPath: m_LocalPosition.z
       value: -24.67
+      objectReference: {fileID: 0}
+    - target: {fileID: 8263840929552463438, guid: cf1b058ce87a0914da6a0edc3d78bd93, type: 3}
+      propertyPath: m_TagString
+      value: CellTower
       objectReference: {fileID: 0}
     - target: {fileID: 8630182533373557982, guid: cf1b058ce87a0914da6a0edc3d78bd93, type: 3}
       propertyPath: m_LocalScale.y

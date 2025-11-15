@@ -39,6 +39,15 @@ public class WorldGenerator : MonoBehaviour
     [Header("Terrain Generation Settings (moved from TerrainGenerator)")]
     public TerrainGenerationSettings terrainSettings = new TerrainGenerationSettings();
 
+    [Header("Points of Interest")]
+    [Tooltip("Prefab for a cell tower point of interest.")] public GameObject cellTowerPrefab;
+    [Tooltip("If ON, will place cell towers after terrain generation.")] public bool placeCellTowers = true;
+    [Tooltip("Average tiles per one tower (roughly one tower per this many tiles).")]
+    [Min(1)] public int tilesPerTower = 6;
+    [Tooltip("Optional vertical offset applied after sampling terrain height.")] public float cellTowerHeightOffset = 0f;
+    [Tooltip("Attach a CellTowerMarker component to spawned towers if missing.")] public bool attachTowerMarkerComponent = true;
+    [Tooltip("Prefix applied to spawned tower GameObject names for discovery.")] public string towerNamePrefix = "CellTower_";
+
 
     public event Action<string> OnNote;
     public event Action<float> OnProgress;
@@ -182,6 +191,9 @@ public class WorldGenerator : MonoBehaviour
         for (int gy = 0; gy < tilesY; gy++)
             for (int gx = 0; gx < tilesX; gx++)
                 terrainGrid[gx, gy].Flush();
+
+        // 6. Points of Interest (Cell Towers)
+        PlaceCellTowers(terrainGrid);
     }
 
     // Build one global river mask in height-sample space [0..samplesX-1] x [0..samplesY-1].
@@ -403,6 +415,10 @@ public class WorldGenerator : MonoBehaviour
         total += tilesX * tilesY;                    // per-tile generate
         total += setNeighbors ? tilesX * tilesY : 0; // stitch
         total += tilesX * tilesY;                    // flush
+        int cellTowerCount = (placeCellTowers && cellTowerPrefab != null)
+            ? Mathf.Max(1, Mathf.RoundToInt((tilesX * tilesY) / (float)Mathf.Max(1, tilesPerTower)))
+            : 0;
+        total += cellTowerCount;                     // towers
 
         int done = 0;
         void Step(string msg, int inc)
@@ -559,8 +575,93 @@ public class WorldGenerator : MonoBehaviour
             }
         }
 
+        // 6. Cell Towers
+        if (cellTowerCount > 0)
+        {
+            Note("Placing cell towers...");
+            yield return null;
+            foreach (var _ in PlaceCellTowersAsync(terrainGrid, cellTowerCount))
+            {
+                Step("Placed cell tower", 1);
+                yield return null;
+            }
+        }
+
         Progress(1f);
         Note("World ready!");
         OnGenerationComplete?.Invoke();
+    }
+
+    // Synchronous placement after world generation
+    void PlaceCellTowers(Terrain[,] terrainGrid)
+    {
+        if (!placeCellTowers)
+        {
+            Note("Cell towers disabled.");
+            return;
+        }
+        if (cellTowerPrefab == null)
+        {
+            Note("No cell tower prefab assigned; skipping.");
+            return;
+        }
+
+        int totalTiles = tilesX * tilesY;
+        if (totalTiles <= 0) return;
+        int desired = Mathf.Max(1, Mathf.RoundToInt(totalTiles / (float)Mathf.Max(1, tilesPerTower)));
+
+        var rng = new System.Random(seed + 987654321);
+        var chosen = new System.Collections.Generic.HashSet<int>();
+        while (chosen.Count < desired && chosen.Count < totalTiles)
+            chosen.Add(rng.Next(totalTiles));
+
+        foreach (int idx in chosen)
+        {
+            int gx = idx % tilesX;
+            int gy = idx / tilesX;
+            float baseX = gx * tileWorldWidth;
+            float baseZ = gy * tileWorldLength;
+            double nx = rng.NextDouble() * 0.6 + 0.2; // keep away from edges
+            double nz = rng.NextDouble() * 0.6 + 0.2;
+            float worldX = baseX + (float)nx * tileWorldWidth;
+            float worldZ = baseZ + (float)nz * tileWorldLength;
+            Terrain terrain = terrainGrid[gx, gy];
+            float heightSample = terrain != null ? terrain.SampleHeight(new Vector3(worldX, 0f, worldZ)) : 0f;
+            Vector3 pos = new Vector3(worldX, heightSample + cellTowerHeightOffset, worldZ);
+            GameObject tower = Instantiate(cellTowerPrefab, pos, Quaternion.Euler(90f, 0f, 0f), transform);
+            tower.name = $"{towerNamePrefix}{gx}_{gy}_{idx}";
+            Note($"Placed cell tower at tile {gx},{gy}.");
+        }
+    }
+
+    // Async placement enumerator
+    System.Collections.Generic.IEnumerable<int> PlaceCellTowersAsync(Terrain[,] terrainGrid, int countBudget)
+    {
+        if (!placeCellTowers || cellTowerPrefab == null) yield break;
+        int totalTiles = tilesX * tilesY;
+        if (totalTiles <= 0) yield break;
+        int desired = Mathf.Min(countBudget, Mathf.Max(1, Mathf.RoundToInt(totalTiles / (float)Mathf.Max(1, tilesPerTower))));
+        var rng = new System.Random(seed + 987654321);
+        var chosen = new System.Collections.Generic.HashSet<int>();
+        while (chosen.Count < desired && chosen.Count < totalTiles)
+            chosen.Add(rng.Next(totalTiles));
+        foreach (int idx in chosen)
+        {
+            int gx = idx % tilesX;
+            int gy = idx / tilesX;
+            float baseX = gx * tileWorldWidth;
+            float baseZ = gy * tileWorldLength;
+            double nx = rng.NextDouble() * 0.6 + 0.2;
+            double nz = rng.NextDouble() * 0.6 + 0.2;
+            float worldX = baseX + (float)nx * tileWorldWidth;
+            float worldZ = baseZ + (float)nz * tileWorldLength;
+            Terrain terrain = terrainGrid[gx, gy];
+            float heightSample = terrain != null ? terrain.SampleHeight(new Vector3(worldX, 0f, worldZ)) : 0f;
+            Vector3 pos = new Vector3(worldX, heightSample + cellTowerHeightOffset, worldZ);
+            GameObject tower = Instantiate(cellTowerPrefab, pos, Quaternion.Euler(90f, 0f, 0f), transform);
+            tower.name = $"{towerNamePrefix}{gx}_{gy}_{idx}";
+            Note($"Placed cell tower at tile {gx},{gy}.");
+            yield return 0; // dummy to count progress
+        }
     }
 }

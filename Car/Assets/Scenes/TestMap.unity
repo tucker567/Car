@@ -579,7 +579,6 @@ GameObject:
   - component: {fileID: 330585545}
   - component: {fileID: 330585547}
   - component: {fileID: 330585548}
-  - component: {fileID: 330585549}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -722,22 +721,6 @@ MonoBehaviour:
   minYaw: -80
   maxYaw: 80
   edgeSensitivityMultiplier: 3
---- !u!114 &330585549
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 330585543}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b77f30d378ea19941acbb82b21317100, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: '::'
-  waypointImage: {fileID: 1869568344}
-  target: {fileID: 1290850086}
-  meter: {fileID: 1150042338}
-  RectOffset: {x: 0, y: 0, z: 0}
 --- !u!1 &404023475
 GameObject:
   m_ObjectHideFlags: 0
@@ -6509,6 +6492,7 @@ GameObject:
   - component: {fileID: 1222498893}
   - component: {fileID: 1222498896}
   - component: {fileID: 1222498894}
+  - component: {fileID: 1222498897}
   m_Layer: 0
   m_Name: UI Camera
   m_TagString: Untagged
@@ -6626,6 +6610,25 @@ Camera:
   m_OcclusionCulling: 1
   m_StereoConvergence: 10
   m_StereoSeparation: 0.022
+--- !u!114 &1222498897
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1222498892}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b77f30d378ea19941acbb82b21317100, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: '::'
+  waypointImage: {fileID: 1869568344}
+  target: {fileID: 1290850086}
+  meter: {fileID: 1150042338}
+  RectOffset: {x: 0, y: 0, z: 0}
+  cam: {fileID: 1222498896}
+  canvas: {fileID: 2084423716}
+  screenOffset: {x: 0, y: 0}
 --- !u!1 &1290850085
 GameObject:
   m_ObjectHideFlags: 0
@@ -7154,8 +7157,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 36ab5959970ed5344b89b95df3c399e9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: '::'
-  tilesX: 2
-  tilesY: 2
+  tilesX: 6
+  tilesY: 6
   tileWorldWidth: 1000
   tileWorldLength: 1000
   heightmapResolution: 256
@@ -7217,6 +7220,10 @@ MonoBehaviour:
     riverTexture: {fileID: 2800000, guid: 087c475847b768f44a3866b91bff8cf5, type: 3}
     tileSize: 5
     useGlobalSeamless: 1
+  cellTowerPrefab: {fileID: 4430317042721807374, guid: 67b594d9b0dca0e4e997edfe78f9df83, type: 3}
+  placeCellTowers: 1
+  tilesPerTower: 6
+  cellTowerHeightOffset: 0
 --- !u!4 &1520580869
 Transform:
   m_ObjectHideFlags: 0
@@ -8002,10 +8009,10 @@ SceneRoots:
   - {fileID: 832575519}
   - {fileID: 1048954912}
   - {fileID: 2084423717}
+  - {fileID: 242016653}
   - {fileID: 980460907}
   - {fileID: 1290850086}
   - {fileID: 668435990}
   - {fileID: 1797841275}
   - {fileID: 1520580869}
   - {fileID: 801489789}
-  - {fileID: 242016653}

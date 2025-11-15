@@ -8405,8 +8405,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 36ab5959970ed5344b89b95df3c399e9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: '::'
-  tilesX: 3
-  tilesY: 3
+  tilesX: 5
+  tilesY: 5
   tileWorldWidth: 1000
   tileWorldLength: 1000
   heightmapResolution: 256
@@ -8474,6 +8474,14 @@ MonoBehaviour:
   cellTowerHeightOffset: 0
   attachTowerMarkerComponent: 1
   towerNamePrefix: CellTowerPrefab
+  warehousePrefab: {fileID: 4845768947324763155, guid: 99fc19592e6f2d14485273a56143af1d, type: 3}
+  placeWarehouses: 1
+  tilesPerWarehouse: 10
+  warehouseHeightOffset: -1
+  warehouseNamePrefix: Warehouse_
+  minDistanceFromTowers: 250
+  minDistanceBetweenWarehouses: 300
+  randomizeWarehouseYaw: 1
 --- !u!4 &1520580869
 Transform:
   m_ObjectHideFlags: 0

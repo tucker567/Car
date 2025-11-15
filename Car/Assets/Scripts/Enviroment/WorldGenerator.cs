@@ -48,6 +48,20 @@ public class WorldGenerator : MonoBehaviour
     [Tooltip("Attach a CellTowerMarker component to spawned towers if missing.")] public bool attachTowerMarkerComponent = true;
     [Tooltip("Prefix applied to spawned tower GameObject names for discovery.")] public string towerNamePrefix = "CellTower_";
 
+    [Header("Warehouses")]
+    [Tooltip("Prefab for a warehouse point of interest.")] public GameObject warehousePrefab;
+    [Tooltip("If ON, will place warehouses after terrain generation.")] public bool placeWarehouses = true;
+    [Tooltip("Average tiles per one warehouse (roughly one warehouse per this many tiles).")]
+    [Min(1)] public int tilesPerWarehouse = 10;
+    [Tooltip("Optional vertical offset applied after sampling terrain height.")] public float warehouseHeightOffset = 0f;
+    [Tooltip("Prefix applied to spawned warehouse GameObject names for discovery.")] public string warehouseNamePrefix = "Warehouse_";
+    [Tooltip("Minimum distance from cell towers when placing warehouses (meters).")]
+    public float minDistanceFromTowers = 250f;
+    [Tooltip("Minimum distance between warehouses (meters).")]
+    public float minDistanceBetweenWarehouses = 300f;
+    [Tooltip("Randomize the Y rotation of placed warehouses.")]
+    public bool randomizeWarehouseYaw = true;
+
 
     public event Action<string> OnNote;
     public event Action<float> OnProgress;
@@ -194,6 +208,9 @@ public class WorldGenerator : MonoBehaviour
 
         // 6. Points of Interest (Cell Towers)
         PlaceCellTowers(terrainGrid);
+
+        // 7. Points of Interest (Warehouses)
+        PlaceWarehouses(terrainGrid);
     }
 
     // Build one global river mask in height-sample space [0..samplesX-1] x [0..samplesY-1].
@@ -419,6 +436,10 @@ public class WorldGenerator : MonoBehaviour
             ? Mathf.Max(1, Mathf.RoundToInt((tilesX * tilesY) / (float)Mathf.Max(1, tilesPerTower)))
             : 0;
         total += cellTowerCount;                     // towers
+        int warehouseCount = (placeWarehouses && warehousePrefab != null)
+            ? Mathf.Max(1, Mathf.RoundToInt((tilesX * tilesY) / (float)Mathf.Max(1, tilesPerWarehouse)))
+            : 0;
+        total += warehouseCount;                    // warehouses
 
         int done = 0;
         void Step(string msg, int inc)
@@ -587,6 +608,18 @@ public class WorldGenerator : MonoBehaviour
             }
         }
 
+        // 7. Warehouses
+        if (warehouseCount > 0)
+        {
+            Note("Placing warehouses...");
+            yield return null;
+            foreach (var _ in PlaceWarehousesAsync(terrainGrid, warehouseCount))
+            {
+                Step("Placed warehouse", 1);
+                yield return null;
+            }
+        }
+
         Progress(1f);
         Note("World ready!");
         OnGenerationComplete?.Invoke();
@@ -634,6 +667,83 @@ public class WorldGenerator : MonoBehaviour
         }
     }
 
+    // Synchronous placement of warehouses with simple spacing constraints
+    void PlaceWarehouses(Terrain[,] terrainGrid)
+    {
+        if (!placeWarehouses)
+        {
+            Note("Warehouses disabled.");
+            return;
+        }
+        if (warehousePrefab == null)
+        {
+            Note("No warehouse prefab assigned; skipping.");
+            return;
+        }
+
+        int totalTiles = tilesX * tilesY;
+        if (totalTiles <= 0) return;
+        int desired = Mathf.Max(1, Mathf.RoundToInt(totalTiles / (float)Mathf.Max(1, tilesPerWarehouse)));
+
+        var rng = new System.Random(seed + 1357911);
+
+        // Collect existing tower positions to avoid proximity
+        var towerPositions = new System.Collections.Generic.List<Vector3>();
+        for (int i = 0; i < transform.childCount; i++)
+        {
+            var ch = transform.GetChild(i);
+            if (ch != null && ch.name.StartsWith(towerNamePrefix, StringComparison.Ordinal))
+                towerPositions.Add(ch.position);
+        }
+
+        var placedWarehouses = new System.Collections.Generic.List<Vector3>();
+        int attempts = 0;
+        int maxAttempts = desired * 20;
+        while (placedWarehouses.Count < desired && attempts < maxAttempts)
+        {
+            attempts++;
+            int gx = rng.Next(0, Mathf.Max(1, tilesX));
+            int gy = rng.Next(0, Mathf.Max(1, tilesY));
+            float baseX = gx * tileWorldWidth;
+            float baseZ = gy * tileWorldLength;
+            double nx = rng.NextDouble() * 0.7 + 0.15; // keep away from edges a bit more
+            double nz = rng.NextDouble() * 0.7 + 0.15;
+            float worldX = baseX + (float)nx * tileWorldWidth;
+            float worldZ = baseZ + (float)nz * tileWorldLength;
+            Terrain terrain = terrainGrid[gx, gy];
+            float heightSample = terrain != null ? terrain.SampleHeight(new Vector3(worldX, 0f, worldZ)) : 0f;
+            Vector3 pos = new Vector3(worldX, heightSample + warehouseHeightOffset, worldZ);
+
+            bool tooCloseToTower = false;
+            for (int i = 0; i < towerPositions.Count; i++)
+            {
+                if (Vector3.SqrMagnitude(pos - towerPositions[i]) < minDistanceFromTowers * minDistanceFromTowers)
+                {
+                    tooCloseToTower = true;
+                    break;
+                }
+            }
+            if (tooCloseToTower) continue;
+
+            bool tooCloseToWarehouse = false;
+            for (int i = 0; i < placedWarehouses.Count; i++)
+            {
+                if (Vector3.SqrMagnitude(pos - placedWarehouses[i]) < minDistanceBetweenWarehouses * minDistanceBetweenWarehouses)
+                {
+                    tooCloseToWarehouse = true;
+                    break;
+                }
+            }
+            if (tooCloseToWarehouse) continue;
+
+            Quaternion rot = randomizeWarehouseYaw ? Quaternion.Euler(0f, (float)rng.NextDouble() * 360f, 0f) : Quaternion.identity;
+            GameObject wh = Instantiate(warehousePrefab, pos, rot, transform);
+            wh.name = $"{warehouseNamePrefix}{gx}_{gy}_{placedWarehouses.Count}";
+            placedWarehouses.Add(pos);
+            Note($"Placed warehouse at tile {gx},{gy}.");
+        }
+    }
+
     // Async placement enumerator
     System.Collections.Generic.IEnumerable<int> PlaceCellTowersAsync(Terrain[,] terrainGrid, int countBudget)
     {
@@ -662,6 +772,65 @@ public class WorldGenerator : MonoBehaviour
             tower.name = $"{towerNamePrefix}{gx}_{gy}_{idx}";
             Note($"Placed cell tower at tile {gx},{gy}.");
             yield return 0; // dummy to count progress
+        }
+    }
+
+    // Async placement enumerator for warehouses
+    System.Collections.Generic.IEnumerable<int> PlaceWarehousesAsync(Terrain[,] terrainGrid, int countBudget)
+    {
+        if (!placeWarehouses || warehousePrefab == null) yield break;
+        int totalTiles = tilesX * tilesY;
+        if (totalTiles <= 0) yield break;
+        int desired = Mathf.Min(countBudget, Mathf.Max(1, Mathf.RoundToInt(totalTiles / (float)Mathf.Max(1, tilesPerWarehouse))));
+
+        var rng = new System.Random(seed + 1357911);
+        var towerPositions = new System.Collections.Generic.List<Vector3>();
+        for (int i = 0; i < transform.childCount; i++)
+        {
+            var ch = transform.GetChild(i);
+            if (ch != null && ch.name.StartsWith(towerNamePrefix, StringComparison.Ordinal))
+                towerPositions.Add(ch.position);
+        }
+        var placedWarehouses = new System.Collections.Generic.List<Vector3>();
+
+        int attempts = 0;
+        int maxAttempts = desired * 30;
+        while (placedWarehouses.Count < desired && attempts < maxAttempts)
+        {
+            attempts++;
+            int gx = rng.Next(0, Mathf.Max(1, tilesX));
+            int gy = rng.Next(0, Mathf.Max(1, tilesY));
+            float baseX = gx * tileWorldWidth;
+            float baseZ = gy * tileWorldLength;
+            double nx = rng.NextDouble() * 0.7 + 0.15;
+            double nz = rng.NextDouble() * 0.7 + 0.15;
+            float worldX = baseX + (float)nx * tileWorldWidth;
+            float worldZ = baseZ + (float)nz * tileWorldLength;
+            Terrain terrain = terrainGrid[gx, gy];
+            float heightSample = terrain != null ? terrain.SampleHeight(new Vector3(worldX, 0f, worldZ)) : 0f;
+            Vector3 pos = new Vector3(worldX, heightSample + warehouseHeightOffset, worldZ);
+
+            bool tooCloseToTower = false;
+            for (int i = 0; i < towerPositions.Count; i++)
+            {
+                if (Vector3.SqrMagnitude(pos - towerPositions[i]) < minDistanceFromTowers * minDistanceFromTowers)
+                { tooCloseToTower = true; break; }
+            }
+            if (tooCloseToTower) continue;
+
+            bool tooCloseToWarehouse = false;
+            for (int i = 0; i < placedWarehouses.Count; i++)
+            {
+                if (Vector3.SqrMagnitude(pos - placedWarehouses[i]) < minDistanceBetweenWarehouses * minDistanceBetweenWarehouses)
+                { tooCloseToWarehouse = true; break; }
+            }
+            if (tooCloseToWarehouse) continue;
+
+            Quaternion rot = randomizeWarehouseYaw ? Quaternion.Euler(0f, (float)rng.NextDouble() * 360f, 0f) : Quaternion.identity;
+            GameObject wh = Instantiate(warehousePrefab, pos, rot, transform);
+            wh.name = $"{warehouseNamePrefix}{gx}_{gy}_{placedWarehouses.Count}";
+            placedWarehouses.Add(pos);
+            yield return 0; // progress unit
         }
     }
 }

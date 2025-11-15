@@ -8482,6 +8482,42 @@ MonoBehaviour:
   minDistanceFromTowers: 250
   minDistanceBetweenWarehouses: 300
   randomizeWarehouseYaw: 1
+  placePropGroups: 1
+  propGroups:
+  - name: Factory
+    prefabs:
+    - {fileID: 1299042608568269594, guid: 246a0a717e9f05741b06dd257bff54f5, type: 3}
+    - {fileID: 5295410753944645750, guid: f55e61dadb28e5e45af4e6fd939a0eee, type: 3}
+    - {fileID: 7021439635298538697, guid: cc6aa6bea55286e4b843811f8d6325a9, type: 3}
+    - {fileID: 5180154096308474650, guid: 5e0dc69569bfba74d9c45e991b33ac9c, type: 3}
+    - {fileID: 7472348026433766551, guid: cb6f81370a7fd654887dfc8d9eaa79bb, type: 3}
+    - {fileID: 3604707497339885149, guid: bb4acedb783cda64d9a5df9682672a06, type: 3}
+    - {fileID: 4700459893112154439, guid: 6d47f27c72392784f9c9af0be84ba29b, type: 3}
+    - {fileID: 4700459893112154439, guid: 6d47f27c72392784f9c9af0be84ba29b, type: 3}
+    - {fileID: 1405353327336918886, guid: 55f14b5e4ca140c488183007d4ad568a, type: 3}
+    - {fileID: 991596630451996917, guid: af3e81c05a46cf348a64e1d9b95fd9d4, type: 3}
+    - {fileID: 3148272845936304368, guid: 36d5748ffe8b9fa4eb5b5ab5e6340bd2, type: 3}
+    - {fileID: 8013020922897950552, guid: bc592a2b28c4b5e4eab03fa5acab3c68, type: 3}
+    clusterCount: 3
+    useTileRatio: 1
+    tilesPerCluster: 4
+    minPerCluster: 3
+    maxPerCluster: 20
+    clusterRadius: 100
+    yOffset: -1
+    randomYaw: 1
+    namePrefix: Factory
+    minDistanceBetweenClusters: 200
+    avoidTowers: 1
+    minDistanceFromTowers: 50
+    avoidWarehouses: 1
+    minDistanceFromWarehouses: 50
+    heightMode: 1
+    heightSamples: 5
+    largePrefabSizeThreshold: 20
+    largePrefabExtraRadiusMultiplier: 0.5
+    alignLargePrefabBottom: 1
+    largePrefabAdditionalDepth: 3
 --- !u!4 &1520580869
 Transform:
   m_ObjectHideFlags: 0

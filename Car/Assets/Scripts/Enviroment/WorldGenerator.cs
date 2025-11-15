@@ -2,6 +2,39 @@ using System;
 using System.Collections;
 using UnityEngine;
 
+[Serializable]
+public class PropGroup
+{
+    public string name = "Group";
+    public System.Collections.Generic.List<GameObject> prefabs = new System.Collections.Generic.List<GameObject>();
+    [Header("Clusters")]
+    [Tooltip("Manual cluster count if useTileRatio is OFF.")] public int clusterCount = 5; // fallback manual count
+    [Tooltip("If ON, derive cluster count from world tile count using tilesPerCluster ratio.")] public bool useTileRatio = true;
+    [Min(1), Tooltip("Average tiles per one prop cluster when useTileRatio is ON.")] public int tilesPerCluster = 12;
+    public int minPerCluster = 3;
+    public int maxPerCluster = 8;
+    public float clusterRadius = 25f;
+    public float yOffset = 0f;
+    public bool randomYaw = true; // randomize Y rotation of props
+    public string namePrefix = "Prop_";
+    public float minDistanceBetweenClusters = 150f;
+    [Header("Avoidance")]
+    public bool avoidTowers = false;
+    public float minDistanceFromTowers = 150f;
+    public bool avoidWarehouses = false;
+    public float minDistanceFromWarehouses = 150f;
+    [Header("Adaptive Height")]
+    [Tooltip("Choose how terrain height is sampled for each prop.")] public HeightMode heightMode = HeightMode.AverageSamples;
+    [Min(1), Tooltip("Number of radial samples (used except in SingleSample mode).")]
+    public int heightSamples = 5;
+    [Tooltip("If a prefab's largest bound dimension >= this, treat as large building for bottom alignment.")] public float largePrefabSizeThreshold = 20f;
+    [Tooltip("Extra sample radius multiplier for large prefabs (relative to their largest size).")]
+    public float largePrefabExtraRadiusMultiplier = 0.5f; // 
+    [Tooltip("Align pivot so bottom of large prefab touches terrain.")] public bool alignLargePrefabBottom = true;
+    [Tooltip("Extra depth to sink large prefabs below sampled terrain.")] public float largePrefabAdditionalDepth = 3f;
+    public enum HeightMode { SingleSample, AverageSamples, LowestSample, HighestSample }
+}
+
 public class WorldGenerator : MonoBehaviour
 {
     [Header("World Grid")]
@@ -61,6 +94,12 @@ public class WorldGenerator : MonoBehaviour
     public float minDistanceBetweenWarehouses = 300f;
     [Tooltip("Randomize the Y rotation of placed warehouses.")]
     public bool randomizeWarehouseYaw = true;
+
+    [Header("Prop Groups")] 
+    [Tooltip("If ON, will place groups of random props after warehouses.")]
+    public bool placePropGroups = true;
+    [Tooltip("Groups of props to spawn in clusters across the world.")]
+    public System.Collections.Generic.List<PropGroup> propGroups = new System.Collections.Generic.List<PropGroup>();
 
 
     public event Action<string> OnNote;
@@ -211,6 +250,9 @@ public class WorldGenerator : MonoBehaviour
 
         // 7. Points of Interest (Warehouses)
         PlaceWarehouses(terrainGrid);
+
+        // 8. Prop Groups (clusters of random props)
+        PlacePropGroups(terrainGrid);
     }
 
     // Build one global river mask in height-sample space [0..samplesX-1] x [0..samplesY-1].
@@ -440,6 +482,17 @@ public class WorldGenerator : MonoBehaviour
             ? Mathf.Max(1, Mathf.RoundToInt((tilesX * tilesY) / (float)Mathf.Max(1, tilesPerWarehouse)))
             : 0;
         total += warehouseCount;                    // warehouses
+        int propClusterCount = 0;
+        if (placePropGroups && propGroups != null && propGroups.Count > 0)
+        {
+            for (int i = 0; i < propGroups.Count; i++)
+            {
+                var g = propGroups[i];
+                if (g != null && g.prefabs != null && g.prefabs.Count > 0 && g.clusterCount > 0)
+                    propClusterCount += g.useTileRatio ? Mathf.Max(1, Mathf.RoundToInt((tilesX * tilesY) / (float)Mathf.Max(1, g.tilesPerCluster))) : g.clusterCount;
+            }
+        }
+        total += propClusterCount;                 // prop clusters
 
         int done = 0;
         void Step(string msg, int inc)
@@ -620,6 +673,18 @@ public class WorldGenerator : MonoBehaviour
             }
         }
 
+        // 8. Prop groups
+        if (propClusterCount > 0)
+        {
+            Note("Placing prop groups...");
+            yield return null;
+            foreach (var _ in PlacePropGroupsAsync(terrainGrid))
+            {
+                Step("Placed prop cluster", 1);
+                yield return null;
+            }
+        }
+
         Progress(1f);
         Note("World ready!");
         OnGenerationComplete?.Invoke();
@@ -742,6 +807,276 @@ public class WorldGenerator : MonoBehaviour
             placedWarehouses.Add(pos);
             Note($"Placed warehouse at tile {gx},{gy}.");
         }
+    }
+
+    // Synchronous placement of prop groups
+    void PlacePropGroups(Terrain[,] terrainGrid)
+    {
+        if (!placePropGroups || propGroups == null || propGroups.Count == 0) return;
+
+        // Cache tower and warehouse positions for avoidance
+        var towerPositions = new System.Collections.Generic.List<Vector3>();
+        var warehousePositions = new System.Collections.Generic.List<Vector3>();
+        for (int i = 0; i < transform.childCount; i++)
+        {
+            var ch = transform.GetChild(i);
+            if (ch == null) continue;
+            if (!string.IsNullOrEmpty(towerNamePrefix) && ch.name.StartsWith(towerNamePrefix, StringComparison.Ordinal))
+                towerPositions.Add(ch.position);
+            if (!string.IsNullOrEmpty(warehouseNamePrefix) && ch.name.StartsWith(warehouseNamePrefix, StringComparison.Ordinal))
+                warehousePositions.Add(ch.position);
+        }
+
+        var rng = new System.Random(seed + 24681357);
+
+        for (int gi = 0; gi < propGroups.Count; gi++)
+        {
+            var g = propGroups[gi];
+            if (g == null || g.prefabs == null || g.prefabs.Count == 0 || g.clusterCount <= 0)
+                continue;
+
+            var placedClusters = new System.Collections.Generic.List<Vector3>();
+            int attempts = 0;
+            int maxAttempts = g.clusterCount * 30;
+            while (placedClusters.Count < g.clusterCount && attempts < maxAttempts)
+            {
+                attempts++;
+                int gx = rng.Next(0, Math.Max(1, tilesX));
+                int gy = rng.Next(0, Math.Max(1, tilesY));
+                float baseX = gx * tileWorldWidth;
+                float baseZ = gy * tileWorldLength;
+                double nx = rng.NextDouble() * 0.7 + 0.15;
+                double nz = rng.NextDouble() * 0.7 + 0.15;
+                float worldX = baseX + (float)nx * tileWorldWidth;
+                float worldZ = baseZ + (float)nz * tileWorldLength;
+                Terrain terrain = terrainGrid[gx, gy];
+                float heightSample = terrain != null ? terrain.SampleHeight(new Vector3(worldX, 0f, worldZ)) : 0f;
+                Vector3 center = new Vector3(worldX, heightSample + g.yOffset, worldZ);
+
+                // Avoid towers
+                if (g.avoidTowers)
+                {
+                    bool tooClose = false;
+                    for (int i = 0; i < towerPositions.Count; i++)
+                    {
+                        if (Vector3.SqrMagnitude(center - towerPositions[i]) < g.minDistanceFromTowers * g.minDistanceFromTowers)
+                        { tooClose = true; break; }
+                    }
+                    if (tooClose) continue;
+                }
+                // Avoid warehouses
+                if (g.avoidWarehouses)
+                {
+                    bool tooClose = false;
+                    for (int i = 0; i < warehousePositions.Count; i++)
+                    {
+                        if (Vector3.SqrMagnitude(center - warehousePositions[i]) < g.minDistanceFromWarehouses * g.minDistanceFromWarehouses)
+                        { tooClose = true; break; }
+                    }
+                    if (tooClose) continue;
+                }
+                // Distance between clusters
+                bool tooCloseCluster = false;
+                for (int i = 0; i < placedClusters.Count; i++)
+                {
+                    if (Vector3.SqrMagnitude(center - placedClusters[i]) < g.minDistanceBetweenClusters * g.minDistanceBetweenClusters)
+                    { tooCloseCluster = true; break; }
+                }
+                if (tooCloseCluster) continue;
+
+                // Place items in cluster
+                int count = Mathf.Clamp(rng.Next(g.minPerCluster, g.maxPerCluster + 1), 0, 1000);
+                for (int k = 0; k < count; k++)
+                {
+                    if (g.prefabs.Count == 0) break;
+                    var prefab = g.prefabs[rng.Next(0, g.prefabs.Count)];
+                    if (prefab == null) continue;
+                    // Position within circle (uniform)
+                    double ang = rng.NextDouble() * Math.PI * 2.0;
+                    double rad = Math.Sqrt(rng.NextDouble()) * g.clusterRadius;
+                    float dx = (float)(Math.Cos(ang) * rad);
+                    float dz = (float)(Math.Sin(ang) * rad);
+                    float px = center.x + dx;
+                    float pz = center.z + dz;
+                    Vector3 rawCenter = new Vector3(px, 0f, pz);
+                    float sampledHeight = SampleAdaptiveHeight(terrain, rawCenter, center.y, prefab, g);
+                    Vector3 p = new Vector3(px, sampledHeight + g.yOffset, pz);
+                    Quaternion rot = g.randomYaw ? Quaternion.Euler(0f, (float)rng.NextDouble() * 360f, 0f) : Quaternion.identity;
+                    var go = Instantiate(prefab, p, rot, transform);
+                    if (g.alignLargePrefabBottom)
+                        AdjustLargePrefabBottom(go, sampledHeight + g.yOffset, g.largePrefabSizeThreshold, g.largePrefabAdditionalDepth);
+                    go.name = $"{(string.IsNullOrEmpty(g.namePrefix) ? "Prop_" : g.namePrefix)}{gi}_{placedClusters.Count}_{k}";
+                }
+
+                placedClusters.Add(center);
+                Note($"Placed prop cluster {placedClusters.Count}/{g.clusterCount} for group '{g.name}'.");
+            }
+        }
+    }
+
+    // Async placement enumerator for prop groups (yields per cluster placed)
+    System.Collections.Generic.IEnumerable<int> PlacePropGroupsAsync(Terrain[,] terrainGrid)
+    {
+        if (!placePropGroups || propGroups == null || propGroups.Count == 0) yield break;
+
+        var towerPositions = new System.Collections.Generic.List<Vector3>();
+        var warehousePositions = new System.Collections.Generic.List<Vector3>();
+        for (int i = 0; i < transform.childCount; i++)
+        {
+            var ch = transform.GetChild(i);
+            if (ch == null) continue;
+            if (!string.IsNullOrEmpty(towerNamePrefix) && ch.name.StartsWith(towerNamePrefix, StringComparison.Ordinal))
+                towerPositions.Add(ch.position);
+            if (!string.IsNullOrEmpty(warehouseNamePrefix) && ch.name.StartsWith(warehouseNamePrefix, StringComparison.Ordinal))
+                warehousePositions.Add(ch.position);
+        }
+
+        var rng = new System.Random(seed + 24681357);
+
+        for (int gi = 0; gi < propGroups.Count; gi++)
+        {
+            var g = propGroups[gi];
+            if (g == null || g.prefabs == null || g.prefabs.Count == 0 || g.clusterCount <= 0)
+                continue;
+
+            var placedClusters = new System.Collections.Generic.List<Vector3>();
+            int attempts = 0;
+            int maxAttempts = g.clusterCount * 30;
+            while (placedClusters.Count < g.clusterCount && attempts < maxAttempts)
+            {
+                attempts++;
+                int gx = rng.Next(0, Math.Max(1, tilesX));
+                int gy = rng.Next(0, Math.Max(1, tilesY));
+                float baseX = gx * tileWorldWidth;
+                float baseZ = gy * tileWorldLength;
+                double nx = rng.NextDouble() * 0.7 + 0.15;
+                double nz = rng.NextDouble() * 0.7 + 0.15;
+                float worldX = baseX + (float)nx * tileWorldWidth;
+                float worldZ = baseZ + (float)nz * tileWorldLength;
+                Terrain terrain = terrainGrid[gx, gy];
+                float heightSample = terrain != null ? terrain.SampleHeight(new Vector3(worldX, 0f, worldZ)) : 0f;
+                Vector3 center = new Vector3(worldX, heightSample + g.yOffset, worldZ);
+
+                if (g.avoidTowers)
+                {
+                    bool tooClose = false;
+                    for (int i = 0; i < towerPositions.Count; i++)
+                    {
+                        if (Vector3.SqrMagnitude(center - towerPositions[i]) < g.minDistanceFromTowers * g.minDistanceFromTowers)
+                        { tooClose = true; break; }
+                    }
+                    if (tooClose) continue;
+                }
+                if (g.avoidWarehouses)
+                {
+                    bool tooClose = false;
+                    for (int i = 0; i < warehousePositions.Count; i++)
+                    {
+                        if (Vector3.SqrMagnitude(center - warehousePositions[i]) < g.minDistanceFromWarehouses * g.minDistanceFromWarehouses)
+                        { tooClose = true; break; }
+                    }
+                    if (tooClose) continue;
+                }
+                bool tooCloseCluster = false;
+                for (int i = 0; i < placedClusters.Count; i++)
+                {
+                    if (Vector3.SqrMagnitude(center - placedClusters[i]) < g.minDistanceBetweenClusters * g.minDistanceBetweenClusters)
+                    { tooCloseCluster = true; break; }
+                }
+                if (tooCloseCluster) continue;
+
+                int count = Mathf.Clamp(rng.Next(g.minPerCluster, g.maxPerCluster + 1), 0, 1000);
+                for (int k = 0; k < count; k++)
+                {
+                    if (g.prefabs.Count == 0) break;
+                    var prefab = g.prefabs[rng.Next(0, g.prefabs.Count)];
+                    if (prefab == null) continue;
+                    double ang = rng.NextDouble() * Math.PI * 2.0;
+                    double rad = Math.Sqrt(rng.NextDouble()) * g.clusterRadius;
+                    float dx = (float)(Math.Cos(ang) * rad);
+                    float dz = (float)(Math.Sin(ang) * rad);
+                    float px = center.x + dx;
+                    float pz = center.z + dz;
+                    Vector3 rawCenter = new Vector3(px, 0f, pz);
+                    float sampledHeight = SampleAdaptiveHeight(terrain, rawCenter, center.y, prefab, g);
+                    Vector3 p = new Vector3(px, sampledHeight + g.yOffset, pz);
+                    Quaternion rot = g.randomYaw ? Quaternion.Euler(0f, (float)rng.NextDouble() * 360f, 0f) : Quaternion.identity;
+                    var go = Instantiate(prefab, p, rot, transform);
+                    if (g.alignLargePrefabBottom)
+                        AdjustLargePrefabBottom(go, sampledHeight + g.yOffset, g.largePrefabSizeThreshold, g.largePrefabAdditionalDepth);
+                    go.name = $"{(string.IsNullOrEmpty(g.namePrefix) ? "Prop_" : g.namePrefix)}{gi}_{placedClusters.Count}_{k}";
+                }
+
+                placedClusters.Add(center);
+                yield return 0; // count one cluster
+            }
+        }
+    }
+
+    // --- Adaptive Height Helpers ---
+    float SampleAdaptiveHeight(Terrain terrain, Vector3 rawCenterXZ, float fallbackHeight, GameObject prefab, PropGroup group)
+    {
+        if (terrain == null) return fallbackHeight;
+        // Single sample shortcut
+        if (group.heightMode == PropGroup.HeightMode.SingleSample || group.heightSamples <= 1)
+        {
+            return terrain.SampleHeight(new Vector3(rawCenterXZ.x, 0f, rawCenterXZ.z));
+        }
+
+        // Determine sampling radius: for large prefabs expand footprint
+        float radius = 0f;
+        float largestSize = GetLargestPrefabDimension(prefab);
+        bool isLarge = largestSize >= group.largePrefabSizeThreshold && largestSize > 0f;
+        if (isLarge)
+            radius = largestSize * group.largePrefabExtraRadiusMultiplier * 0.5f; // half since size ~ diameter
+        else
+            radius = Mathf.Min(group.clusterRadius * 0.25f, 10f); // small local variation
+
+        int samples = Mathf.Max(2, group.heightSamples);
+        float sum = 0f;
+        float minH = float.MaxValue;
+        float maxH = float.MinValue;
+        for (int i = 0; i < samples; i++)
+        {
+            float t = (float)i / samples;
+            float ang = t * Mathf.PI * 2f;
+            Vector3 samplePos = rawCenterXZ + new Vector3(Mathf.Cos(ang) * radius, 0f, Mathf.Sin(ang) * radius);
+            float h = terrain.SampleHeight(new Vector3(samplePos.x, 0f, samplePos.z));
+            sum += h;
+            if (h < minH) minH = h;
+            if (h > maxH) maxH = h;
+        }
+        switch (group.heightMode)
+        {
+            case PropGroup.HeightMode.LowestSample: return minH;
+            case PropGroup.HeightMode.HighestSample: return maxH;
+            case PropGroup.HeightMode.AverageSamples: default: return sum / samples;
+        }
+    }
+
+    float GetLargestPrefabDimension(GameObject prefab)
+    {
+        if (prefab == null) return 0f;
+        var r = prefab.GetComponentInChildren<Renderer>();
+        if (r == null) return 0f;
+        var size = r.bounds.size;
+        return Mathf.Max(size.x, size.y, size.z);
+    }
+
+    void AdjustLargePrefabBottom(GameObject instance, float targetGroundY, float sizeThreshold, float extraDepth)
+    {
+        if (instance == null) return;
+        var r = instance.GetComponentInChildren<Renderer>();
+        if (r == null) return;
+        var size = r.bounds.size;
+        float largest = Mathf.Max(size.x, size.y, size.z);
+        if (largest < sizeThreshold) return; // only adjust large
+        // Compute how far pivot is above bottom
+        float bottomY = r.bounds.min.y;
+        float pivotY = instance.transform.position.y;
+        float diff = pivotY - bottomY; // how much to lower so bottom touches pivot level
+        // Set so bottom sits on sampled terrain height
+        instance.transform.position = new Vector3(instance.transform.position.x, targetGroundY + diff - Mathf.Abs(extraDepth), instance.transform.position.z);
     }
 
     // Async placement enumerator

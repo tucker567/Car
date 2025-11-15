@@ -39,6 +39,20 @@ public class QuestPickerManager : MonoBehaviour
     public List<string> quests = new List<string>();
     public float cooldownSeconds = 30f;        // Time after selection before charging is allowed again
 
+    [Header("Button Layout")] 
+    public bool autoLayoutButtons = true;      // Ensure a VerticalLayoutGroup exists
+    public float buttonSpacing = 8f;           // Spacing between buttons
+    public int paddingLeft = 8;                // Container padding
+    public int paddingRight = 8;
+    public int paddingTop = 8;
+    public int paddingBottom = 8;
+    public bool controlChildWidth = true;      // Layout controls child width
+    public bool controlChildHeight = true;     // Layout controls child height
+    public bool expandChildWidth = true;       // Force expand width
+    public bool expandChildHeight = false;     // Force expand height
+    public bool setButtonPreferredHeight = true;
+    public float buttonPreferredHeight = 40f;
+
     private float _nextRefreshTime;
     private float _currentCharge = 0f;
     private GameObject _player;
@@ -65,6 +79,7 @@ public class QuestPickerManager : MonoBehaviour
             panelSelectQuest.SetActive(false);
         if (panelQuestActive != null)
             panelQuestActive.SetActive(false);
+        EnsureButtonLayout();
         _nextRefreshTime = Time.time + 0.25f; // Quick initial scan shortly after start
     }
 
@@ -278,6 +293,7 @@ public class QuestPickerManager : MonoBehaviour
             if (child != null)
                 Destroy(child.gameObject);
         }
+        EnsureButtonLayout();
         for (int i = 0; i < quests.Count; i++)
         {
             int idx = i; // capture for closure
@@ -288,6 +304,25 @@ public class QuestPickerManager : MonoBehaviour
             var label = go.GetComponentInChildren<TMP_Text>();
             if (label != null)
                 label.text = quests[i];
+            // Ensure each button participates nicely in layout
+            var rt = go.transform as RectTransform;
+            if (rt != null)
+            {
+                rt.anchorMin = new Vector2(0, 1);
+                rt.anchorMax = new Vector2(1, 1);
+                rt.pivot = new Vector2(0.5f, 1);
+                rt.anchoredPosition = Vector2.zero;
+                rt.localScale = Vector3.one;
+                rt.offsetMin = new Vector2(rt.offsetMin.x, rt.offsetMin.y);
+                rt.offsetMax = new Vector2(rt.offsetMax.x, rt.offsetMax.y);
+            }
+            var le = go.GetComponent<LayoutElement>();
+            if (le == null) le = go.AddComponent<LayoutElement>();
+            if (setButtonPreferredHeight)
+            {
+                le.preferredHeight = buttonPreferredHeight;
+                le.minHeight = buttonPreferredHeight;
+            }
         }
     }
 
@@ -308,5 +343,24 @@ public class QuestPickerManager : MonoBehaviour
         if (questCanvas != null) questCanvas.enabled = true;
         if (activeQuestText != null) activeQuestText.text = quests[questIndex];
         _selectionSpawned = false; // allow re-spawn next time we reach 100 after cooldown
+    }
+
+    // Ensures a VerticalLayoutGroup + ContentSizeFitter on the container with configured spacing/padding
+    private void EnsureButtonLayout()
+    {
+        if (!autoLayoutButtons || buttonContainer == null) return;
+        var v = buttonContainer.GetComponent<VerticalLayoutGroup>();
+        if (v == null) v = buttonContainer.gameObject.AddComponent<VerticalLayoutGroup>();
+        v.spacing = buttonSpacing;
+        v.padding = new RectOffset(paddingLeft, paddingRight, paddingTop, paddingBottom);
+        v.childControlWidth = controlChildWidth;
+        v.childControlHeight = controlChildHeight;
+        v.childForceExpandWidth = expandChildWidth;
+        v.childForceExpandHeight = expandChildHeight;
+
+        var fitter = buttonContainer.GetComponent<ContentSizeFitter>();
+        if (fitter == null) fitter = buttonContainer.gameObject.AddComponent<ContentSizeFitter>();
+        fitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
+        fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
     }
 }

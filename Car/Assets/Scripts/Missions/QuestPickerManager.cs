@@ -53,6 +53,9 @@ public class QuestPickerManager : MonoBehaviour
     public bool setButtonPreferredHeight = true;
     public float buttonPreferredHeight = 40f;
 
+    [Header("Quest Switching")]
+    public bool allowQuestSwitching = true;   // Allow player to change quest after one is active
+
     private float _nextRefreshTime;
     private float _currentCharge = 0f;
     private GameObject _player;
@@ -275,7 +278,9 @@ public class QuestPickerManager : MonoBehaviour
     // UI flow: show selection panel and spawn quest buttons
     private void ShowQuestSelection()
     {
-        if (_selectionSpawned || _currentQuestIndex >= 0) return; // already shown or quest active
+        // If switching is allowed, ignore active quest index when showing selection.
+        if (_selectionSpawned) return;
+        if (!allowQuestSwitching && _currentQuestIndex >= 0) return;
         if (questCanvas != null) questCanvas.enabled = true;
         if (panelQuestActive != null) panelQuestActive.SetActive(false);
         if (panelSelectQuest != null) panelSelectQuest.SetActive(true);
@@ -303,7 +308,13 @@ public class QuestPickerManager : MonoBehaviour
                 btn.onClick.AddListener(() => StartQuest(idx));
             var label = go.GetComponentInChildren<TMP_Text>();
             if (label != null)
-                label.text = quests[i];
+            {
+                // Mark current quest if switching allowed.
+                if (allowQuestSwitching && _currentQuestIndex == idx)
+                    label.text = quests[i] + " (Current)";
+                else
+                    label.text = quests[i];
+            }
             // Ensure each button participates nicely in layout
             var rt = go.transform as RectTransform;
             if (rt != null)
@@ -329,6 +340,7 @@ public class QuestPickerManager : MonoBehaviour
     public void StartQuest(int questIndex)
     {
         if (questIndex < 0 || questIndex >= quests.Count) return;
+        // If same quest selected while switching allowed, simply refresh cooldown and UI.
         _currentQuestIndex = questIndex;
         _nextChargeAllowedTime = Time.time + cooldownSeconds;
         _currentCharge = 0f;
@@ -342,7 +354,7 @@ public class QuestPickerManager : MonoBehaviour
         if (panelQuestActive != null) panelQuestActive.SetActive(true);
         if (questCanvas != null) questCanvas.enabled = true;
         if (activeQuestText != null) activeQuestText.text = quests[questIndex];
-        _selectionSpawned = false; // allow re-spawn next time we reach 100 after cooldown
+        _selectionSpawned = false; // allow re-spawn next time charge reaches 100
     }
 
     // Ensures a VerticalLayoutGroup + ContentSizeFitter on the container with configured spacing/padding

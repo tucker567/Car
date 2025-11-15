@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 using UnityEngine.UIElements;
 
 public class QuestPickerManager : MonoBehaviour
@@ -26,9 +27,24 @@ public class QuestPickerManager : MonoBehaviour
     public VisualElement questListContainer;
     public TMP_Text towerchargeText;
 
+    [Header("Quest UI (UGUI)")]
+    public Canvas questCanvas;                 // Quest canvas containing both panels
+    public GameObject panelSelectQuest;        // First panel: selection list
+    public Transform buttonContainer;          // Where buttons are spawned (under panelSelectQuest)
+    public GameObject questButtonPrefab;       // Prefab with Button + TMP_Text child
+    public GameObject panelQuestActive;        // Second panel: active quest display
+    public TMP_Text activeQuestText;           // Text component to show current quest
+
+    [Header("Quests")] 
+    public List<string> quests = new List<string>();
+    public float cooldownSeconds = 30f;        // Time after selection before charging is allowed again
+
     private float _nextRefreshTime;
     private float _currentCharge = 0f;
     private GameObject _player;
+    private float _nextChargeAllowedTime = 0f;
+    private bool _selectionSpawned = false;
+    private int _currentQuestIndex = -1;
     [Header("Debug")]
     public bool debugLogs = false;
     private bool _wasInsideAny = false;
@@ -42,6 +58,13 @@ public class QuestPickerManager : MonoBehaviour
             towerchargeText.gameObject.SetActive(false);
             towerchargeText.text = "0";
         }
+        // Initialize quest canvas and panels
+        if (questCanvas != null)
+            questCanvas.enabled = false;
+        if (panelSelectQuest != null)
+            panelSelectQuest.SetActive(false);
+        if (panelQuestActive != null)
+            panelQuestActive.SetActive(false);
         _nextRefreshTime = Time.time + 0.25f; // Quick initial scan shortly after start
     }
 
@@ -126,7 +149,9 @@ public class QuestPickerManager : MonoBehaviour
             _wasInsideAny = insideAny;
         }
 
-        if (insideAny)
+        bool inCooldown = Time.time < _nextChargeAllowedTime;
+
+        if (insideAny && !inCooldown)
         {
             if (_currentCharge < 100f)
             {
@@ -142,8 +167,8 @@ public class QuestPickerManager : MonoBehaviour
             }
             else
             {
-                if (questListContainer != null)
-                    questListContainer.style.display = DisplayStyle.Flex;
+                // Fully charged: open selection panel and spawn buttons once
+                ShowQuestSelection();
             }
         }
         else
@@ -230,5 +255,58 @@ public class QuestPickerManager : MonoBehaviour
             effectiveRange = Mathf.Max(range, area.radius * maxScale);
         }
         return Vector3.Distance(playerPos, center) <= effectiveRange;
+    }
+
+    // UI flow: show selection panel and spawn quest buttons
+    private void ShowQuestSelection()
+    {
+        if (_selectionSpawned || _currentQuestIndex >= 0) return; // already shown or quest active
+        if (questCanvas != null) questCanvas.enabled = true;
+        if (panelQuestActive != null) panelQuestActive.SetActive(false);
+        if (panelSelectQuest != null) panelSelectQuest.SetActive(true);
+        SpawnQuestButtons();
+        _selectionSpawned = true;
+    }
+
+    private void SpawnQuestButtons()
+    {
+        if (buttonContainer == null || questButtonPrefab == null) return;
+        // Clear old buttons
+        for (int i = buttonContainer.childCount - 1; i >= 0; i--)
+        {
+            var child = buttonContainer.GetChild(i);
+            if (child != null)
+                Destroy(child.gameObject);
+        }
+        for (int i = 0; i < quests.Count; i++)
+        {
+            int idx = i; // capture for closure
+            var go = Instantiate(questButtonPrefab, buttonContainer);
+            var btn = go.GetComponentInChildren<UnityEngine.UI.Button>();
+            if (btn != null)
+                btn.onClick.AddListener(() => StartQuest(idx));
+            var label = go.GetComponentInChildren<TMP_Text>();
+            if (label != null)
+                label.text = quests[i];
+        }
+    }
+
+    public void StartQuest(int questIndex)
+    {
+        if (questIndex < 0 || questIndex >= quests.Count) return;
+        _currentQuestIndex = questIndex;
+        _nextChargeAllowedTime = Time.time + cooldownSeconds;
+        _currentCharge = 0f;
+        if (towerchargeText != null)
+        {
+            towerchargeText.text = "0";
+            towerchargeText.gameObject.SetActive(false);
+        }
+        // Swap panels
+        if (panelSelectQuest != null) panelSelectQuest.SetActive(false);
+        if (panelQuestActive != null) panelQuestActive.SetActive(true);
+        if (questCanvas != null) questCanvas.enabled = true;
+        if (activeQuestText != null) activeQuestText.text = quests[questIndex];
+        _selectionSpawned = false; // allow re-spawn next time we reach 100 after cooldown
     }
 }

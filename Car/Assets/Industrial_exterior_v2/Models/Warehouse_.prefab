@@ -13,8 +13,8 @@ GameObject:
   - component: {fileID: 6246448312042433507}
   - component: {fileID: 5384053880776026171}
   m_Layer: 0
-  m_Name: Building_10
-  m_TagString: Untagged
+  m_Name: Warehouse_
+  m_TagString: Warehouse
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0

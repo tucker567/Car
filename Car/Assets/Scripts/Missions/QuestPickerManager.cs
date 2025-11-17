@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Collections;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -36,7 +37,7 @@ public class QuestPickerManager : MonoBehaviour
     public TMP_Text activeQuestText;           // Text component to show current quest
 
     [Header("Quests")] 
-    public List<string> quests = new List<string>();
+    public List<QuestBase> quests = new List<QuestBase>();
     public float cooldownSeconds = 30f;        // Time after selection before charging is allowed again
 
     [Header("Button Layout")] 
@@ -55,6 +56,12 @@ public class QuestPickerManager : MonoBehaviour
 
     [Header("Quest Switching")]
     public bool allowQuestSwitching = true;   // Allow player to change quest after one is active
+
+    [Header("UI Behavior")]
+    [Tooltip("Seconds to keep active quest panel visible after completion before hiding.")] public float activePanelHideDelayAfterComplete = 3f;
+    [Tooltip("Hide panel on failed quest as well.")] public bool hidePanelOnFail = true;
+
+    private Coroutine _hidePanelRoutine;
 
     private float _nextRefreshTime;
     private float _currentCharge = 0f;
@@ -310,10 +317,11 @@ public class QuestPickerManager : MonoBehaviour
             if (label != null)
             {
                 // Mark current quest if switching allowed.
+                string qname = quests[i] != null ? quests[i].DisplayName : "(Missing Quest)";
                 if (allowQuestSwitching && _currentQuestIndex == idx)
-                    label.text = quests[i] + " (Current)";
+                    label.text = qname + " (Current)";
                 else
-                    label.text = quests[i];
+                    label.text = qname;
             }
             // Ensure each button participates nicely in layout
             var rt = go.transform as RectTransform;
@@ -340,7 +348,21 @@ public class QuestPickerManager : MonoBehaviour
     public void StartQuest(int questIndex)
     {
         if (questIndex < 0 || questIndex >= quests.Count) return;
-        // If same quest selected while switching allowed, simply refresh cooldown and UI.
+        var quest = quests[questIndex];
+        if (quest == null) return;
+
+        // Stop previous quest if switching
+        if (_currentQuestIndex >= 0 && _currentQuestIndex < quests.Count)
+        {
+            var prev = quests[_currentQuestIndex];
+            if (prev != null && prev.IsActive && allowQuestSwitching)
+            {
+                prev.CancelQuest();
+                prev.OnStatus -= OnQuestStatus;
+                prev.OnCompleted -= OnQuestCompleted;
+            }
+        }
+
         _currentQuestIndex = questIndex;
         _nextChargeAllowedTime = Time.time + cooldownSeconds;
         _currentCharge = 0f;
@@ -353,8 +375,51 @@ public class QuestPickerManager : MonoBehaviour
         if (panelSelectQuest != null) panelSelectQuest.SetActive(false);
         if (panelQuestActive != null) panelQuestActive.SetActive(true);
         if (questCanvas != null) questCanvas.enabled = true;
-        if (activeQuestText != null) activeQuestText.text = quests[questIndex];
+        if (activeQuestText != null) activeQuestText.text = quest.DisplayName;
         _selectionSpawned = false; // allow re-spawn next time charge reaches 100
+
+        // Subscribe to quest updates
+        quest.OnStatus -= OnQuestStatus;
+        quest.OnCompleted -= OnQuestCompleted;
+        quest.OnStatus += OnQuestStatus;
+        quest.OnCompleted += OnQuestCompleted;
+
+        // Start quest with current player reference
+        var playerObj = _player != null ? _player : GameObject.FindGameObjectWithTag("playerCar");
+        quest.StartQuest(playerObj);
+    }
+
+    private void OnQuestStatus(string msg)
+    {
+        if (activeQuestText != null && !string.IsNullOrEmpty(msg))
+            activeQuestText.text = msg;
+    }
+
+    private void OnQuestCompleted(bool success)
+    {
+        if (activeQuestText != null)
+            activeQuestText.text = success ? "Quest complete!" : "Quest failed.";
+        if (_hidePanelRoutine != null)
+        {
+            StopCoroutine(_hidePanelRoutine);
+            _hidePanelRoutine = null;
+        }
+        if (questCanvas != null && panelQuestActive != null)
+        {
+            bool shouldHide = success || (hidePanelOnFail && !success);
+            if (shouldHide && activePanelHideDelayAfterComplete > 0f)
+                _hidePanelRoutine = StartCoroutine(HideActivePanelAfterDelay(activePanelHideDelayAfterComplete));
+            else if (shouldHide && activePanelHideDelayAfterComplete <= 0f)
+                panelQuestActive.SetActive(false);
+        }
+    }
+
+    private IEnumerator HideActivePanelAfterDelay(float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        if (panelQuestActive != null)
+            panelQuestActive.SetActive(false);
+        _hidePanelRoutine = null;
     }
 
     // Ensures a VerticalLayoutGroup + ContentSizeFitter on the container with configured spacing/padding

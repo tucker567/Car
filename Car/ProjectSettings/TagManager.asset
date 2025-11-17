@@ -8,6 +8,7 @@ TagManager:
   - playerCar
   - GamePlayUI
   - CellTower
+  - Warehouse
   layers:
   - Default
   - TransparentFX

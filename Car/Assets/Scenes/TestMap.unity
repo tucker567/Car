@@ -8170,6 +8170,62 @@ RectTransform:
   m_CorrespondingSourceObject: {fileID: 4576356616482503409, guid: 1c0423ae6e6c0cd4ea2b74d5ac0ca11f, type: 3}
   m_PrefabInstance: {fileID: 1471859169}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1472020806
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1472020808}
+  - component: {fileID: 1472020807}
+  m_Layer: 0
+  m_Name: Quests
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1472020807
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1472020806}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 65a187566ad84834db811cb841829726, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SupplyRun
+  displayName: SupplyRun
+  warehouseTag: Warehouse
+  warehouseNamePrefix: Warehouse_
+  reachDistance: 50
+  minSeparationBetweenPickupAndDrop: 1500
+  debugLogs: 0
+  showWaypoints: 1
+  waypointPrefab: {fileID: 5543575459437453721, guid: 68eaab8ef200f1348bde67b6f908bf99, type: 3}
+  waypointCanvas: {fileID: 2084423716}
+  waypointCameraOverride: {fileID: 1222498896}
+  pickupColor: {r: 0, g: 1, b: 1, a: 1}
+  dropoffColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+--- !u!4 &1472020808
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1472020806}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 2328.7449, y: 0, z: 1655.9597}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1474050217
 GameObject:
   m_ObjectHideFlags: 0
@@ -8477,7 +8533,7 @@ MonoBehaviour:
   warehousePrefab: {fileID: 4845768947324763155, guid: 99fc19592e6f2d14485273a56143af1d, type: 3}
   placeWarehouses: 1
   tilesPerWarehouse: 10
-  warehouseHeightOffset: -1
+  warehouseHeightOffset: -3
   warehouseNamePrefix: Warehouse_
   minDistanceFromTowers: 250
   minDistanceBetweenWarehouses: 300
@@ -9780,8 +9836,7 @@ MonoBehaviour:
   panelQuestActive: {fileID: 963136971}
   activeQuestText: {fileID: 1417123970}
   quests:
-  - SupplyRun
-  - AttackBase
+  - {fileID: 1472020807}
   cooldownSeconds: 30
   autoLayoutButtons: 1
   buttonSpacing: 8
@@ -9796,6 +9851,8 @@ MonoBehaviour:
   setButtonPreferredHeight: 1
   buttonPreferredHeight: 30
   allowQuestSwitching: 1
+  activePanelHideDelayAfterComplete: 3
+  hidePanelOnFail: 1
   debugLogs: 0
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
@@ -9816,3 +9873,4 @@ SceneRoots:
   - {fileID: 2097317461}
   - {fileID: 179229497}
   - {fileID: 1833422123}
+  - {fileID: 1472020808}

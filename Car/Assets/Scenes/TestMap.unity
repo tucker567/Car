@@ -8518,6 +8518,35 @@ MonoBehaviour:
     largePrefabExtraRadiusMultiplier: 0.5
     alignLargePrefabBottom: 1
     largePrefabAdditionalDepth: 3
+  - name: SkyScrapers
+    prefabs:
+    - {fileID: 919132149155446097, guid: 8b96e7811bc126945a26239b7f2395b6, type: 3}
+    - {fileID: 919132149155446097, guid: 973cc55f6ea69074296dd2fb8347ecbf, type: 3}
+    - {fileID: 919132149155446097, guid: 2910d5621dcaf1d449b5d4bc7ef6f629, type: 3}
+    - {fileID: 919132149155446097, guid: 8b7712840f57f88408e10ca3a690ae4b, type: 3}
+    - {fileID: 919132149155446097, guid: ac8ca95fb91d6914088e07d93fee7da6, type: 3}
+    - {fileID: 919132149155446097, guid: 5fb6eb0e6de822641aeeb5242eb33bc4, type: 3}
+    - {fileID: 919132149155446097, guid: 27c61e767d256c94483eaf1c7af3570f, type: 3}
+    clusterCount: 3
+    useTileRatio: 1
+    tilesPerCluster: 3
+    minPerCluster: 1
+    maxPerCluster: 4
+    clusterRadius: 100
+    yOffset: -1
+    randomYaw: 1
+    namePrefix: SkyScrapers
+    minDistanceBetweenClusters: 200
+    avoidTowers: 1
+    minDistanceFromTowers: 250
+    avoidWarehouses: 1
+    minDistanceFromWarehouses: 250
+    heightMode: 1
+    heightSamples: 5
+    largePrefabSizeThreshold: 20
+    largePrefabExtraRadiusMultiplier: 0.5
+    alignLargePrefabBottom: 1
+    largePrefabAdditionalDepth: 3
 --- !u!4 &1520580869
 Transform:
   m_ObjectHideFlags: 0
@@ -9579,7 +9608,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &2084423714
 MonoBehaviour:
   m_ObjectHideFlags: 0

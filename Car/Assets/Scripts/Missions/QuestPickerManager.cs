@@ -318,10 +318,15 @@ public class QuestPickerManager : MonoBehaviour
             {
                 // Mark current quest if switching allowed.
                 string qname = quests[i] != null ? quests[i].DisplayName : "(Missing Quest)";
-                if (allowQuestSwitching && _currentQuestIndex == idx)
+                var qref = quests[i];
+                if (allowQuestSwitching && _currentQuestIndex == idx && qref != null && qref.IsActive)
+                {
                     label.text = qname + " (Current)";
+                }
                 else
+                {
                     label.text = qname;
+                }
             }
             // Ensure each button participates nicely in layout
             var rt = go.transform as RectTransform;

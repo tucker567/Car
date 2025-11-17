@@ -42,6 +42,7 @@ Transform:
   - {fileID: 4652002139571224873}
   - {fileID: 1936944681672005596}
   - {fileID: 267968818246662573}
+  - {fileID: 5685490824110646118}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 90, z: 0}
 --- !u!54 &6410409409001862846
@@ -89,7 +90,7 @@ MonoBehaviour:
   heatCoolRate: 50
   overheatCoolRate: 50
   boostForce: 550
-  boostText: {fileID: 0}
+  BoostText: {fileID: 0}
   overheatSlowMultiplier: 0.85
   rigid: {fileID: 6410409409001862846}
   wheel1: {fileID: 2114291455802639633}
@@ -1424,6 +1425,37 @@ Transform:
   - {fileID: 6252794256737835616}
   m_Father: {fileID: 267968818246662573}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &7412212925664159952
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5685490824110646118}
+  m_Layer: 8
+  m_Name: CargoMount
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &5685490824110646118
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7412212925664159952}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0.23414516, y: -0, z: -0, w: 0.97220165}
+  m_LocalPosition: {x: -2.842171e-14, y: 0.29199094, z: -1.6270357}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 4672444582964679318}
+  m_LocalEulerAnglesHint: {x: -27.082, y: 0, z: 0}
 --- !u!1 &7553707257369081277
 GameObject:
   m_ObjectHideFlags: 0

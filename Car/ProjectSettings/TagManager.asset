@@ -9,6 +9,7 @@ TagManager:
   - GamePlayUI
   - CellTower
   - Warehouse
+  - Crate
   layers:
   - Default
   - TransparentFX

@@ -8211,6 +8211,20 @@ MonoBehaviour:
   waypointCameraOverride: {fileID: 1222498896}
   pickupColor: {r: 0, g: 1, b: 1, a: 1}
   dropoffColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  enableCrateCarry: 1
+  useExistingCrateAtPickup: 0
+  spawnCrateAtSocket: 1
+  crateTag: Crate
+  cratePrefab: {fileID: 8590869588190223255, guid: 49515706c6a83334e9eabb95dc94d8cf, type: 3}
+  crateSearchRadius: 25
+  playerCarrySocket: {fileID: 0}
+  playerCarrySocketName: CargoMount
+  crateLocalPos: {x: 0, y: 0, z: 0}
+  crateLocalEuler: {x: 0, y: 0, z: 0}
+  disableCratePhysicsWhileCarrying: 1
+  dropoffPlacementOffset: {x: 0, y: 0, z: 0}
+  destroyCrateOnDelivery: 1
+  destroyCrateOnCancel: 1
 --- !u!4 &1472020808
 Transform:
   m_ObjectHideFlags: 0

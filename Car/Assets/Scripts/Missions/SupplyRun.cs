@@ -23,6 +23,22 @@ public class SupplyRun : QuestBase
     [Tooltip("Color tint for the pickup waypoint.")] public Color pickupColor = Color.cyan;
     [Tooltip("Color tint for the dropoff waypoint.")] public Color dropoffColor = Color.yellow;
 
+    [Header("Crate Carrying")]
+    [Tooltip("Attach a crate to the player's car during the run.")] public bool enableCrateCarry = true;
+    [Tooltip("If true, look for an existing crate near the pickup. If false, spawn from prefab.")] public bool useExistingCrateAtPickup = true;
+    [Tooltip("When spawning a crate from prefab, spawn it at the player's carry socket instead of the pickup location.")] public bool spawnCrateAtSocket = true;
+    [Tooltip("Tag used to find crates when using existing crates.")] public string crateTag = "Crate";
+    [Tooltip("Crate prefab to spawn when not using existing crates.")] public GameObject cratePrefab;
+    [Tooltip("Max distance to search for an existing crate at pickup.")] public float crateSearchRadius = 25f;
+    [Tooltip("Optional explicit socket on player to parent the crate to.")] public Transform playerCarrySocket;
+    [Tooltip("If no socket assigned, search this child name on the player.")] public string playerCarrySocketName = "CargoMount";
+    [Tooltip("Crate local position while carried.")] public Vector3 crateLocalPos = Vector3.zero;
+    [Tooltip("Crate local Euler rotation while carried.")] public Vector3 crateLocalEuler = Vector3.zero;
+    [Tooltip("Disable crate physics while attached (sets isKinematic=true; disables gravity). ")] public bool disableCratePhysicsWhileCarrying = true;
+    [Tooltip("Offset applied when placing the crate at dropoff location.")] public Vector3 dropoffPlacementOffset = new Vector3(0f, 0f, 0f);
+    [Tooltip("Destroy the crate when delivered.")] public bool destroyCrateOnDelivery = false;
+    [Tooltip("If quest is canceled while carrying a spawned crate, destroy it.")] public bool destroyCrateOnCancel = true;
+
     enum State { Idle, ToPickup, ToDropoff, Completed, Failed }
     State _state = State.Idle;
     Transform _pickup;
@@ -31,6 +47,9 @@ public class SupplyRun : QuestBase
     Coroutine _runner;
     MissionWaypoint _pickupWp;
     MissionWaypoint _dropoffWp;
+    GameObject _carriedCrate;
+    Transform _crateOriginalParent;
+    Rigidbody _crateRb;
 
     public override void StartQuest(GameObject playerObj)
     {
@@ -85,6 +104,7 @@ public class SupplyRun : QuestBase
         _dropoff = null;
         _hasCrate = false;
         DestroyWaypoints();
+        DropOrCleanupCrateOnCancel();
         base.CancelQuest();
     }
 
@@ -139,6 +159,7 @@ public class SupplyRun : QuestBase
                 Status($"Supply Run: Crate loaded! Drive to dropoff.");
                 if (debugLogs) Debug.Log("SupplyRun: picked up crate.", this);
                 if (showWaypoints) UpdateWaypointStates(afterPickup:true);
+                if (enableCrateCarry) TryAttachCrate();
             }
         }
         else
@@ -152,6 +173,7 @@ public class SupplyRun : QuestBase
                 Complete(true);
                 if (debugLogs) Debug.Log("SupplyRun: delivered crate.", this);
                 DestroyWaypoints();
+                if (enableCrateCarry) ReleaseCrateAtDropoff();
             }
         }
     }
@@ -270,5 +292,138 @@ public class SupplyRun : QuestBase
     {
         if (_pickupWp != null) Destroy(_pickupWp.gameObject); _pickupWp = null;
         if (_dropoffWp != null) Destroy(_dropoffWp.gameObject); _dropoffWp = null;
+    }
+
+    void TryAttachCrate()
+    {
+        if (player == null) return;
+        if (_carriedCrate != null) return;
+
+        // Resolve socket early so we can spawn at it if desired
+        var socket = ResolvePlayerSocket();
+        if (socket == null) socket = player.transform;
+
+        GameObject crate = null;
+        if (useExistingCrateAtPickup)
+        {
+            crate = FindClosestCrate(_pickup != null ? _pickup.position : player.transform.position, crateSearchRadius);
+            if (crate == null && debugLogs) Debug.LogWarning("SupplyRun: No existing crate found near pickup.");
+        }
+        else if (cratePrefab != null)
+        {
+            Vector3 spawnPos = (_pickup != null) ? _pickup.position : player.transform.position;
+            Quaternion spawnRot = Quaternion.identity;
+            if (spawnCrateAtSocket && socket != null)
+            {
+                spawnPos = socket.position;
+                spawnRot = socket.rotation;
+            }
+            crate = Instantiate(cratePrefab, spawnPos, spawnRot);
+        }
+
+        if (crate == null) return;
+
+        _carriedCrate = crate;
+        _crateOriginalParent = crate.transform.parent;
+        _crateRb = crate.GetComponent<Rigidbody>();
+
+        if (_crateRb != null && disableCratePhysicsWhileCarrying)
+        {
+            _crateRb.isKinematic = true;
+            _crateRb.useGravity = false;
+            _crateRb.linearVelocity = Vector3.zero;
+            _crateRb.angularVelocity = Vector3.zero;
+        }
+
+        crate.transform.SetParent(socket, worldPositionStays:false);
+        crate.transform.localPosition = crateLocalPos;
+        crate.transform.localRotation = Quaternion.Euler(crateLocalEuler);
+    }
+
+    void ReleaseCrateAtDropoff()
+    {
+        if (_carriedCrate == null) return;
+
+        // If spawned and configured to destroy on delivery, do so.
+        bool wasSpawned = !useExistingCrateAtPickup;
+        if (destroyCrateOnDelivery && wasSpawned)
+        {
+            Destroy(_carriedCrate);
+            _carriedCrate = null; _crateOriginalParent = null; _crateRb = null;
+            return;
+        }
+
+        // Otherwise, place it at dropoff
+        _carriedCrate.transform.SetParent(null, true);
+        if (_dropoff != null)
+        {
+            _carriedCrate.transform.position = _dropoff.position + dropoffPlacementOffset;
+        }
+        if (_crateRb != null)
+        {
+            _crateRb.isKinematic = false;
+            _crateRb.useGravity = true;
+        }
+        _carriedCrate = null; _crateOriginalParent = null; _crateRb = null;
+    }
+
+    void DropOrCleanupCrateOnCancel()
+    {
+        if (_carriedCrate == null) return;
+
+        bool wasSpawned = !useExistingCrateAtPickup;
+        if (destroyCrateOnCancel && wasSpawned)
+        {
+            Destroy(_carriedCrate);
+        }
+        else
+        {
+            // Return to original parent or just unparent
+            _carriedCrate.transform.SetParent(_crateOriginalParent, true);
+            if (_crateRb != null)
+            {
+                _crateRb.isKinematic = false;
+                _crateRb.useGravity = true;
+            }
+        }
+        _carriedCrate = null; _crateOriginalParent = null; _crateRb = null;
+    }
+
+    GameObject FindClosestCrate(Vector3 pos, float maxDist)
+    {
+        if (string.IsNullOrEmpty(crateTag)) return null;
+        var all = GameObject.FindGameObjectsWithTag(crateTag);
+        GameObject best = null;
+        float bestD = maxDist > 0f ? maxDist : float.MaxValue;
+        foreach (var go in all)
+        {
+            if (go == null || !go.activeInHierarchy) continue;
+            float d = Vector3.Distance(pos, go.transform.position);
+            if (d < bestD)
+            {
+                bestD = d; best = go;
+            }
+        }
+        return best;
+    }
+
+    Transform ResolvePlayerSocket()
+    {
+        if (playerCarrySocket != null) return playerCarrySocket;
+        if (player == null) return null;
+        if (string.IsNullOrEmpty(playerCarrySocketName)) return null;
+        return FindChildRecursive(player.transform, playerCarrySocketName);
+    }
+
+    Transform FindChildRecursive(Transform root, string name)
+    {
+        if (root.name == name) return root;
+        for (int i = 0; i < root.childCount; i++)
+        {
+            var c = root.GetChild(i);
+            var r = FindChildRecursive(c, name);
+            if (r != null) return r;
+        }
+        return null;
     }
 }

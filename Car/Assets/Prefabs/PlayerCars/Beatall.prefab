@@ -39,6 +39,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
+  - {fileID: 161903440161913721}
   - {fileID: 4652002139571224873}
   - {fileID: 6250745243682854962}
   - {fileID: 267968818246662573}
@@ -89,7 +90,7 @@ MonoBehaviour:
   heatCoolRate: 20
   overheatCoolRate: 10
   boostForce: 750
-  boostText: {fileID: 0}
+  BoostText: {fileID: 0}
   overheatSlowMultiplier: 0.99
   rigid: {fileID: 6410409409001862846}
   wheel1: {fileID: 2114291455802639633}
@@ -615,6 +616,37 @@ WheelCollider:
   m_LayerOverridePriority: 0
   m_Enabled: 1
   m_ProvidesContacts: 0
+--- !u!1 &947248518157793340
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 161903440161913721}
+  m_Layer: 8
+  m_Name: CargoMount
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &161903440161913721
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 947248518157793340}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0.44170994, y: -0, z: -0, w: 0.8971579}
+  m_LocalPosition: {x: -2.842171e-14, y: 0.29198107, z: -1.627082}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 4672444582964679318}
+  m_LocalEulerAnglesHint: {x: -52.426, y: 0, z: 0}
 --- !u!1 &1086115086676441264
 GameObject:
   m_ObjectHideFlags: 0

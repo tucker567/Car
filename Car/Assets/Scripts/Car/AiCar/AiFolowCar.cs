@@ -4,7 +4,6 @@ public class AiFolowCar : MonoBehaviour
 {
     public Transform playerCar;
     public AiCar aiCar;
-    public CarHealth CarHealth;
     public float sideOffset = 3f;
     private bool driveOnLeft = true;
     public float followDistance = 2f;
@@ -27,9 +26,50 @@ public class AiFolowCar : MonoBehaviour
     private float lastSpeedError = 0f;
     public float speedKp = 0.5f, speedKi = 0.05f, speedKd = 0.1f;
 
+    [Header("Player Auto-Find")]
+    public bool autoFindPlayer = true;
+    public string playerTag = "playerCar";
+    public float playerSearchInterval = 0.5f;
+
+    private float _nextPlayerSearchTime;
+    private bool _playerSearchStarted;
+
+    void Awake()
+    {
+        if (aiCar == null) aiCar = GetComponent<AiCar>();
+    }
+
     // Update is called once per frame
     void Update()
     {
+        // Late-spawned player support
+        if ((playerCar == null || (aiCar != null && aiCar.playerCar == null)) && autoFindPlayer)
+        {
+            if (!_playerSearchStarted)
+            {
+                _playerSearchStarted = true;
+                _nextPlayerSearchTime = Time.time; // search immediately first frame
+            }
+            if (Time.time >= _nextPlayerSearchTime)
+            {
+                var go = GameObject.FindGameObjectWithTag(playerTag);
+                if (go != null)
+                {
+                    playerCar = go.transform;
+                    if (aiCar != null) aiCar.playerCar = playerCar;
+                }
+                _nextPlayerSearchTime = Time.time + Mathf.Max(0.05f, playerSearchInterval);
+            }
+        }
+
+        if (aiCar == null)
+        {
+            aiCar = GetComponent<AiCar>();
+            if (aiCar == null) return; // wait until available
+        }
+
+        if (playerCar == null) return; // wait for player to spawn
+
         float aiSpeed = aiCar.rigid.linearVelocity.magnitude;
         float distanceToPlayer = Vector3.Distance(aiCar.transform.position, playerCar.position);
 

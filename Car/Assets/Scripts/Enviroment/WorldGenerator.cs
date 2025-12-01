@@ -101,6 +101,17 @@ public class WorldGenerator : MonoBehaviour
     [Tooltip("Groups of props to spawn in clusters across the world.")]
     public System.Collections.Generic.List<PropGroup> propGroups = new System.Collections.Generic.List<PropGroup>();
 
+    [Header("Bunker Entrance")]
+    [Tooltip("Prefab for the single bunker entrance.")] public GameObject bunkerEntrancePrefab;
+    [Tooltip("If ON, spawns exactly one bunker entrance before props.")] public bool placeBunkerEntrance = true;
+    [Tooltip("Vertical offset applied after sampling terrain height for bunker.")] public float bunkerEntranceHeightOffset = 0f;
+    [Tooltip("Random yaw rotation for bunker entrance.")] public bool randomizeBunkerYaw = true;
+    [Tooltip("Name prefix for spawned bunker entrance.")] public string bunkerEntranceNamePrefix = "BunkerEntrance_";
+    [Tooltip("Normalized tile margin to keep bunker away from tile edges (0..0.5).")][Range(0f,0.5f)] public float bunkerTileEdgeMargin = 0.15f;
+
+    // Runtime reference to spawned bunker entrance
+    public Transform spawnedBunkerEntrance;
+
 
     public event Action<string> OnNote;
     public event Action<float> OnProgress;
@@ -250,6 +261,9 @@ public class WorldGenerator : MonoBehaviour
 
         // 7. Points of Interest (Warehouses)
         PlaceWarehouses(terrainGrid);
+
+        // 7.5 Single Bunker Entrance
+        PlaceBunkerEntrance(terrainGrid);
 
         // 8. Prop Groups (clusters of random props)
         PlacePropGroups(terrainGrid);
@@ -482,6 +496,8 @@ public class WorldGenerator : MonoBehaviour
             ? Mathf.Max(1, Mathf.RoundToInt((tilesX * tilesY) / (float)Mathf.Max(1, tilesPerWarehouse)))
             : 0;
         total += warehouseCount;                    // warehouses
+        int bunkerCount = (placeBunkerEntrance && bunkerEntrancePrefab != null) ? 1 : 0;
+        total += bunkerCount;                      // bunker entrance
         int propClusterCount = 0;
         if (placePropGroups && propGroups != null && propGroups.Count > 0)
         {
@@ -673,6 +689,18 @@ public class WorldGenerator : MonoBehaviour
             }
         }
 
+        // 7.5 Bunker Entrance
+        if (bunkerCount > 0)
+        {
+            Note("Placing bunker entrance...");
+            yield return null;
+            foreach (var _ in PlaceBunkerEntranceAsync(terrainGrid))
+            {
+                Step("Placed bunker entrance", 1);
+                yield return null;
+            }
+        }
+
         // 8. Prop groups
         if (propClusterCount > 0)
         {
@@ -807,6 +835,59 @@ public class WorldGenerator : MonoBehaviour
             placedWarehouses.Add(pos);
             Note($"Placed warehouse at tile {gx},{gy}.");
         }
+    }
+
+    // Synchronous placement of single bunker entrance
+    void PlaceBunkerEntrance(Terrain[,] terrainGrid)
+    {
+        if (!placeBunkerEntrance)
+        {
+            Note("Bunker entrance disabled.");
+            return;
+        }
+        if (bunkerEntrancePrefab == null)
+        {
+            Note("No bunker entrance prefab assigned; skipping.");
+            return;
+        }
+        // Ensure only one (remove existing if any when regenerating)
+        for (int i = transform.childCount - 1; i >= 0; i--)
+        {
+            var ch = transform.GetChild(i);
+            if (ch != null && ch.name.StartsWith(bunkerEntranceNamePrefix, StringComparison.Ordinal))
+            {
+#if UNITY_EDITOR
+                if (!Application.isPlaying) DestroyImmediate(ch.gameObject); else Destroy(ch.gameObject);
+#else
+                Destroy(ch.gameObject);
+#endif
+            }
+        }
+
+        int totalTiles = tilesX * tilesY;
+        if (totalTiles <= 0)
+        {
+            Note("No tiles for bunker entrance placement.");
+            return;
+        }
+
+        var rng = new System.Random(seed + 5432101);
+        int gx = rng.Next(0, Mathf.Max(1, tilesX));
+        int gy = rng.Next(0, Mathf.Max(1, tilesY));
+        float baseX = gx * tileWorldWidth;
+        float baseZ = gy * tileWorldLength;
+        double nx = rng.NextDouble() * (1.0 - 2.0 * bunkerTileEdgeMargin) + bunkerTileEdgeMargin; // keep inside tile
+        double nz = rng.NextDouble() * (1.0 - 2.0 * bunkerTileEdgeMargin) + bunkerTileEdgeMargin;
+        float worldX = baseX + (float)nx * tileWorldWidth;
+        float worldZ = baseZ + (float)nz * tileWorldLength;
+        Terrain terrain = terrainGrid[gx, gy];
+        float heightSample = terrain != null ? terrain.SampleHeight(new Vector3(worldX, 0f, worldZ)) : 0f;
+        Vector3 pos = new Vector3(worldX, heightSample + bunkerEntranceHeightOffset, worldZ);
+        Quaternion rot = randomizeBunkerYaw ? Quaternion.Euler(0f, (float)rng.NextDouble() * 360f, 0f) : Quaternion.identity;
+        GameObject bunker = Instantiate(bunkerEntrancePrefab, pos, rot, transform);
+        bunker.name = $"{bunkerEntranceNamePrefix}{gx}_{gy}";
+        spawnedBunkerEntrance = bunker.transform;
+        Note($"Placed bunker entrance at tile {gx},{gy}.");
     }
 
     // Synchronous placement of prop groups
@@ -1167,5 +1248,44 @@ public class WorldGenerator : MonoBehaviour
             placedWarehouses.Add(pos);
             yield return 0; // progress unit
         }
+    }
+
+    // Async placement enumerator for single bunker entrance
+    System.Collections.Generic.IEnumerable<int> PlaceBunkerEntranceAsync(Terrain[,] terrainGrid)
+    {
+        if (!placeBunkerEntrance || bunkerEntrancePrefab == null) yield break;
+        // Remove any existing bunker entrance first
+        for (int i = transform.childCount - 1; i >= 0; i--)
+        {
+            var ch = transform.GetChild(i);
+            if (ch != null && ch.name.StartsWith(bunkerEntranceNamePrefix, StringComparison.Ordinal))
+            {
+#if UNITY_EDITOR
+                if (!Application.isPlaying) DestroyImmediate(ch.gameObject); else Destroy(ch.gameObject);
+#else
+                Destroy(ch.gameObject);
+#endif
+            }
+        }
+        int totalTiles = tilesX * tilesY;
+        if (totalTiles <= 0) yield break;
+        var rng = new System.Random(seed + 5432101);
+        int gx = rng.Next(0, Mathf.Max(1, tilesX));
+        int gy = rng.Next(0, Mathf.Max(1, tilesY));
+        float baseX = gx * tileWorldWidth;
+        float baseZ = gy * tileWorldLength;
+        double nx = rng.NextDouble() * (1.0 - 2.0 * bunkerTileEdgeMargin) + bunkerTileEdgeMargin;
+        double nz = rng.NextDouble() * (1.0 - 2.0 * bunkerTileEdgeMargin) + bunkerTileEdgeMargin;
+        float worldX = baseX + (float)nx * tileWorldWidth;
+        float worldZ = baseZ + (float)nz * tileWorldLength;
+        Terrain terrain = terrainGrid[gx, gy];
+        float heightSample = terrain != null ? terrain.SampleHeight(new Vector3(worldX, 0f, worldZ)) : 0f;
+        Vector3 pos = new Vector3(worldX, heightSample + bunkerEntranceHeightOffset, worldZ);
+        Quaternion rot = randomizeBunkerYaw ? Quaternion.Euler(0f, (float)rng.NextDouble() * 360f, 0f) : Quaternion.identity;
+        GameObject bunker = Instantiate(bunkerEntrancePrefab, pos, rot, transform);
+        bunker.name = $"{bunkerEntranceNamePrefix}{gx}_{gy}";
+        spawnedBunkerEntrance = bunker.transform;
+        Note($"Placed bunker entrance at tile {gx},{gy}.");
+        yield return 0; // progress unit
     }
 }

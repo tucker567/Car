@@ -10,6 +10,7 @@ TagManager:
   - CellTower
   - Warehouse
   - Crate
+  - Bunker
   layers:
   - Default
   - TransparentFX

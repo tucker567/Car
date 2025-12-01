@@ -242,18 +242,54 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fcac810b516a3a04eaab404d1d2b8e15, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TerrainGenerator
-  depth: 20
-  width: 256
-  height: 256
-  scale: 20
-  useRandomSeed: 1
-  seed: 0
-  octaves: 4
-  persistence: 0.5
-  lacunarity: 2
-  duneHeight: 0.3
-  windDirection: 0.3
-  duneStretch: 1.5
+  settings:
+    autoGenerate: 1
+    enableRivers: 1
+    scale: 8
+    useRandomSeed: 1
+    seed: 0
+    octaves: 4
+    persistence: 0.5
+    lacunarity: 1.4
+    duneHeight: 1
+    windDirection: 0.6
+    duneStretch: 1.5
+    minRivers: 1
+    maxRivers: 5
+    riverWidth: 100
+    riverDepth: 0
+    riverWindiness: 10
+    riverBankSoftness: 12
+    riverTextureSpread: 4.5
+    riverSmoothPasses: 4
+    riverLowFrequency: 0.5
+    riverHighFrequency: 4
+    riverLowAmplitude: 0.25
+    riverHighAmplitude: 0.05
+    riverRoughness: 0.2
+    riverRoughnessFrequency: 3
+    riverWidthJitter: 0.25
+    riverWidthJitterFrequency: 0.8
+    biomeScale: 0.2
+    biomeThreshold: 0.5
+    biomeTransition: 0.01
+    biomeOffsetScale: 0.01
+    biomeOctaves: 1
+    biomePersistence: 0.5
+    biomeLacunarity: 2
+    biomeUseRidged: 0
+    biomeRotationDegrees: 0
+    biomeWarpStrength: 0
+    biomeWarpScale: 0.5
+    biomeContrast: 1
+    biomeInvert: 1
+    biomeUseSeparateSeed: 0
+    biomeSeed: 0
+    duneTexture: {fileID: 0}
+    saltFlatTexture: {fileID: 0}
+    riverTexture: {fileID: 0}
+    tileSize: 5
+    useGlobalSeamless: 1
 --- !u!154 &1857429230
 TerrainCollider:
   m_ObjectHideFlags: 0

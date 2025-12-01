@@ -25,12 +25,25 @@ public class SpawnCar : MonoBehaviour
 
     public GameObject Titlesceane;
 
+    [Header("Bunker Entrance Placement")]
+    public bool spawnNearBunker = true; // If true, override spawnPoint with random spot near bunkerEntrance
+    public Transform bunkerEntrance;    // Assign the bunker entrance transform here
+    [Tooltip("Minimum horizontal distance from bunker entrance.")] public float bunkerMinDistance = 3f;
+    [Tooltip("Maximum horizontal distance from bunker entrance.")] public float bunkerMaxDistance = 12f;
+    [Tooltip("Restrict spawning to this forward arc (degrees) relative to bunker forward. 360 = full circle.")] [Range(0f,360f)] public float bunkerForwardArc = 160f;
+    [Tooltip("Extra vertical offset after sampling ground height.")] public float bunkerHeightOffset = 0.2f;
+    [Tooltip("Layer mask for ground raycast.")] public LayerMask groundRaycastMask = ~0;
+    [Tooltip("Align car 'up' to ground normal if raycast hits.")] public bool alignToGroundNormal = true;
+    [Tooltip("Auto-find bunker entrance by name or tag if not assigned.")] public string bunkerAutoFindNamePrefix = "BunkerEntrance_";
+    [Tooltip("Tag to search if name search fails (optional).") ] public string bunkerAutoFindTag = "";
+
     // Runtime reference to the spawned car
     private GameObject spawnedCar;
 
     void Awake()
     {
         AutoFindCarNameText();
+        AutoFindBunkerEntrance();
         ClampSelectedIndex();
         UpdateCarNameUI();
     }
@@ -77,6 +90,35 @@ public class SpawnCar : MonoBehaviour
         if (selectedIndex >= cars.Count) selectedIndex = cars.Count - 1;
     }
 
+    void AutoFindBunkerEntrance()
+    {
+        if (bunkerEntrance != null) return;
+        // Try exact name prefix scan among scene objects
+        var allRoots = gameObject.scene.GetRootGameObjects();
+        foreach (var root in allRoots)
+        {
+            var tList = root.GetComponentsInChildren<Transform>(true);
+            foreach (var t in tList)
+            {
+                if (t != null && t.name.StartsWith(bunkerAutoFindNamePrefix, System.StringComparison.Ordinal))
+                {
+                    bunkerEntrance = t;
+                    return;
+                }
+            }
+        }
+        // Tag search if provided
+        if (bunkerEntrance == null && !string.IsNullOrEmpty(bunkerAutoFindTag))
+        {
+            try
+            {
+                var tagged = GameObject.FindGameObjectWithTag(bunkerAutoFindTag);
+                if (tagged != null) bunkerEntrance = tagged.transform;
+            }
+            catch { }
+        }
+    }
+
     void UpdateCarNameUI()
     {
         if (carNameText == null) return;
@@ -121,8 +163,18 @@ public class SpawnCar : MonoBehaviour
             return;
         }
 
-        var spawnPos = spawnPoint != null ? spawnPoint.position : Vector3.zero;
-        var spawnRot = spawnPoint != null ? spawnPoint.rotation : Quaternion.identity;
+        Vector3 spawnPos;
+        Quaternion spawnRot;
+
+        if (spawnNearBunker && bunkerEntrance != null)
+        {
+            ComputeRandomSpawnNearBunker(out spawnPos, out spawnRot);
+        }
+        else
+        {
+            spawnPos = spawnPoint != null ? spawnPoint.position : Vector3.zero;
+            spawnRot = spawnPoint != null ? spawnPoint.rotation : Quaternion.identity;
+        }
 
         spawnedCar = Instantiate(entry.prefab, spawnPos, spawnRot);
 
@@ -144,6 +196,60 @@ public class SpawnCar : MonoBehaviour
     {
         ClampSelectedIndex();
         UpdateCarNameUI();
+        bunkerMinDistance = Mathf.Max(0.1f, Mathf.Min(bunkerMinDistance, bunkerMaxDistance));
+        bunkerMaxDistance = Mathf.Max(bunkerMinDistance, bunkerMaxDistance);
+        if (spawnNearBunker && bunkerEntrance == null)
+            AutoFindBunkerEntrance();
     }
 #endif
+
+    // Compute a random spawn position near the bunker entrance.
+    void ComputeRandomSpawnNearBunker(out Vector3 spawnPos, out Quaternion spawnRot)
+    {
+        spawnPos = bunkerEntrance != null ? bunkerEntrance.position : (spawnPoint != null ? spawnPoint.position : Vector3.zero);
+        spawnRot = bunkerEntrance != null ? bunkerEntrance.rotation : Quaternion.identity;
+        if (bunkerEntrance == null) return;
+
+        // Random radius and angle within arc
+        float radius = Random.Range(bunkerMinDistance, bunkerMaxDistance);
+        float halfArc = bunkerForwardArc * 0.5f;
+        float angleOffset = bunkerForwardArc >= 360f ? Random.Range(0f, 360f) : Random.Range(-halfArc, halfArc);
+        Vector3 forwardFlat = Vector3.ProjectOnPlane(bunkerEntrance.forward, Vector3.up).normalized;
+        if (forwardFlat == Vector3.zero) forwardFlat = Vector3.forward;
+        Vector3 dir = Quaternion.AngleAxis(angleOffset, Vector3.up) * forwardFlat;
+        Vector3 candidate = bunkerEntrance.position + dir * radius;
+
+        // Raycast down to find ground
+        Vector3 rayOrigin = candidate + Vector3.up * 100f;
+        Ray ray = new Ray(rayOrigin, Vector3.down);
+        if (Physics.Raycast(ray, out RaycastHit hit, 500f, groundRaycastMask, QueryTriggerInteraction.Ignore))
+        {
+            spawnPos = hit.point + Vector3.up * bunkerHeightOffset;
+            if (alignToGroundNormal)
+            {
+                Vector3 flatForward = Vector3.ProjectOnPlane(dir, hit.normal);
+                if (flatForward == Vector3.zero) flatForward = dir;
+                spawnRot = Quaternion.LookRotation(flatForward, hit.normal);
+            }
+            else
+            {
+                spawnRot = Quaternion.LookRotation(Vector3.ProjectOnPlane(dir, Vector3.up), Vector3.up);
+            }
+        }
+        else
+        {
+            // Fallback: terrain height if available
+            Terrain t = Terrain.activeTerrain;
+            if (t != null)
+            {
+                float h = t.SampleHeight(candidate);
+                spawnPos = new Vector3(candidate.x, h + bunkerHeightOffset, candidate.z);
+            }
+            else
+            {
+                spawnPos = candidate;
+            }
+            spawnRot = Quaternion.LookRotation(Vector3.ProjectOnPlane(dir, Vector3.up), Vector3.up);
+        }
+    }
 }

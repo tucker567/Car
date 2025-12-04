@@ -48,6 +48,15 @@ public class SpawnCar : MonoBehaviour
         UpdateCarNameUI();
     }
 
+    void Start()
+    {
+        // Wait for world generation to complete before relocating near bunker
+        if (spawnNearBunker)
+        {
+            StartCoroutine(RelocateAfterWorldGeneration());
+        }
+    }
+
     void AutoFindCarNameText()
     {
         if (carNameText != null) return;
@@ -250,6 +259,78 @@ public class SpawnCar : MonoBehaviour
                 spawnPos = candidate;
             }
             spawnRot = Quaternion.LookRotation(Vector3.ProjectOnPlane(dir, Vector3.up), Vector3.up);
+        }
+    }
+
+    // Wait for WorldGenerator to finish, then find bunker and move this GameObject near it
+    System.Collections.IEnumerator RelocateAfterWorldGeneration()
+    {
+        WorldGenerator wg = FindObjectOfType<WorldGenerator>();
+        // Immediate check: if already generated and bunker exists
+        if (wg != null && wg.spawnedBunkerEntrance != null)
+        {
+            bunkerEntrance = wg.spawnedBunkerEntrance;
+            MoveSpawnPointNearBunker();
+            yield break;
+        }
+
+        bool generationComplete = false;
+        System.Action onComplete = () => generationComplete = true;
+        if (wg != null) wg.OnGenerationComplete += onComplete;
+
+        // Wait until generation complete OR bunker appears, with timeout
+        float timeout = 60f;
+        float elapsed = 0f;
+        while (elapsed < timeout)
+        {
+            if (wg != null && wg.spawnedBunkerEntrance != null)
+            {
+                bunkerEntrance = wg.spawnedBunkerEntrance;
+                break;
+            }
+            if (generationComplete)
+            {
+                // Try auto-find after completion
+                AutoFindBunkerEntrance();
+                if (bunkerEntrance != null) break;
+            }
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+
+        if (wg != null) wg.OnGenerationComplete -= onComplete;
+
+        // Final fallback: auto-find by name prefix
+        if (bunkerEntrance == null)
+        {
+            AutoFindBunkerEntrance();
+        }
+
+        if (bunkerEntrance != null)
+        {
+            MoveSpawnPointNearBunker();
+        }
+        else
+        {
+            Debug.LogWarning("[SpawnCar] Bunker entrance not found after world generation; spawn point not relocated.");
+        }
+    }
+
+    // Move this GameObject (and spawnPoint if assigned) near the bunker
+    void MoveSpawnPointNearBunker()
+    {
+        Vector3 spawnPos; Quaternion spawnRot;
+        ComputeRandomSpawnNearBunker(out spawnPos, out spawnRot);
+
+        // Move this GameObject itself near the bunker
+        transform.position = spawnPos;
+        transform.rotation = spawnRot;
+
+        // Also sync spawnPoint if it exists
+        if (spawnPoint != null)
+        {
+            spawnPoint.position = spawnPos;
+            spawnPoint.rotation = spawnRot;
         }
     }
 }

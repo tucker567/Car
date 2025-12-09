@@ -6,6 +6,8 @@ public class MissionWaypoint : MonoBehaviour
 {
     public Image waypointImage;
     public Transform target; // World-space target to track
+    [Tooltip("Optional tag to find target Transform. If provided and 'target' is null, we'll search by tag.")]
+    public string targetTag;
     public TextMeshProUGUI meter;
     public Vector3 RectOffset; // Treated as a world-space offset
 
@@ -21,9 +23,38 @@ public class MissionWaypoint : MonoBehaviour
     [Tooltip("If true, waypoints behind the camera are reflected to the screen edges instead of appearing in front.")]
     public bool reflectBehindToScreenEdge = true;
 
+    void Awake()
+    {
+        // Resolve target via tag if 'target' not assigned
+        TryResolveTargetByTag();
+    }
+
+    void OnEnable()
+    {
+        // Re-attempt on enable in case scene order changed
+        TryResolveTargetByTag();
+    }
+
+    void TryResolveTargetByTag()
+    {
+        if (target == null && !string.IsNullOrEmpty(targetTag))
+        {
+            var go = GameObject.FindWithTag(targetTag);
+            if (go != null)
+                target = go.transform;
+        }
+    }
+
     void Update()
     {
-        if (waypointImage == null || target == null) return;
+        if (waypointImage == null) return;
+
+        // If target still null, try to resolve by tag once more (cheap check)
+        if (target == null)
+        {
+            TryResolveTargetByTag();
+            if (target == null) return; // Fallback: no target found, do nothing
+        }
 
         var useCam = cam != null ? cam : Camera.main;
         if (useCam == null) return;

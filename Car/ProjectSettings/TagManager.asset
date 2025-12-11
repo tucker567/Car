@@ -11,6 +11,7 @@ TagManager:
   - Warehouse
   - Crate
   - Bunker
+  - EndScreen - Panel
   layers:
   - Default
   - TransparentFX

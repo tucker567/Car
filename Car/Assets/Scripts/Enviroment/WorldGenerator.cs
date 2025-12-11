@@ -5,6 +5,7 @@ using UnityEngine;
 [Serializable]
 public class PropGroup
 {
+    public SpawnCar spawnCar; // for utility functions
     public string name = "Group";
     public System.Collections.Generic.List<GameObject> prefabs = new System.Collections.Generic.List<GameObject>();
     [Header("Clusters")]
@@ -55,6 +56,8 @@ public class WorldGenerator : MonoBehaviour
     // Async + reporting
     [Header("Async Generation & Reporting")]
     public bool generateAsync = true;
+    [Tooltip("Delay before starting generation to let UI update.")]
+    public float generationStartDelaySeconds = 2f;
 
     [Header("Generation Flow")]
     public bool autoGenerateAtStart = true;
@@ -119,16 +122,6 @@ public class WorldGenerator : MonoBehaviour
 
     void Note(string msg) => OnNote?.Invoke(msg);
     void Progress(float p) => OnProgress?.Invoke(Mathf.Clamp01(p));
-
-    public void Start()
-    {
-        if (!autoGenerateAtStart) return;
-
-        if (generateAsync)
-            StartCoroutine(GenerateWorldAsync());
-        else
-            GenerateWorld();
-    }
 
     public void GenerateWorld()
     {
@@ -267,6 +260,31 @@ public class WorldGenerator : MonoBehaviour
 
         // 8. Prop Groups (clusters of random props)
         PlacePropGroups(terrainGrid);
+    }
+
+    // Public delayed entry point so UI can update before heavy work starts
+    public void StartWorldGenerationWithDelay()
+    {
+        StartCoroutine(StartWorldGenerationDelayed());
+    }
+
+    IEnumerator StartWorldGenerationDelayed()
+    {
+        float d = Mathf.Max(0f, generationStartDelaySeconds);
+        if (d > 0f)
+        {
+            Note($"Starting world generation in {d:0.0}s...");
+            yield return new WaitForSeconds(d);
+        }
+        if (generateAsync)
+        {
+            yield return GenerateWorldAsync();
+        }
+        else
+        {
+            GenerateWorld();
+            OnGenerationComplete?.Invoke();
+        }
     }
 
     // Build one global river mask in height-sample space [0..samplesX-1] x [0..samplesY-1].

@@ -20,7 +20,6 @@ public class SpawnCar : MonoBehaviour
     public string carNameObjectName = "CarNameText"; // Name or Canvas/CarNameText path
 
     [Header("Spawn Settings")]
-    public Transform spawnPoint;
     public Camera mainCamera;
 
     public GameObject Titlesceane;
@@ -40,8 +39,14 @@ public class SpawnCar : MonoBehaviour
     // Runtime reference to the spawned car
     private GameObject spawnedCar;
 
+    [Header("World Generation Integration")]
+    public bool autoSpawnOnWorldReady = true; // Auto call Play() when world generation completes
+
     void Awake()
     {
+        // Auto-find bunker entrace if needed
+        AutoFindBunkerEntrance();
+
         AutoFindCarNameText();
         AutoFindBunkerEntrance();
         ClampSelectedIndex();
@@ -54,6 +59,16 @@ public class SpawnCar : MonoBehaviour
         if (spawnNearBunker)
         {
             StartCoroutine(RelocateAfterWorldGeneration());
+        }
+
+        // Subscribe to world generation completion to auto-spawn car
+        if (autoSpawnOnWorldReady)
+        {
+            var wg = FindObjectOfType<WorldGenerator>();
+            if (wg != null)
+            {
+                wg.OnGenerationComplete += OnWorldGenerationComplete;
+            }
         }
     }
 
@@ -161,6 +176,22 @@ public class SpawnCar : MonoBehaviour
             return;
         }
 
+        // Ensure bunker reference is available if spawning near bunker
+        if (spawnNearBunker && bunkerEntrance == null)
+        {
+            var wg = FindObjectOfType<WorldGenerator>();
+            if (wg != null && wg.spawnedBunkerEntrance != null)
+            {
+                bunkerEntrance = wg.spawnedBunkerEntrance;
+            }
+        }
+        // If still missing and we must spawn near bunker, delay spawning
+        if (spawnNearBunker && bunkerEntrance == null)
+        {
+            Debug.LogWarning("[SpawnCar] Bunker entrance not ready; skipping spawn until world generation completes.");
+            return;
+        }
+
         // Remove previously spawned car (optional)
         if (spawnedCar != null)
             Destroy(spawnedCar);
@@ -175,14 +206,16 @@ public class SpawnCar : MonoBehaviour
         Vector3 spawnPos;
         Quaternion spawnRot;
 
-        if (spawnNearBunker && bunkerEntrance != null)
+        // Always base spawning around the bunker entrance
+        if (bunkerEntrance != null)
         {
             ComputeRandomSpawnNearBunker(out spawnPos, out spawnRot);
         }
         else
         {
-            spawnPos = spawnPoint != null ? spawnPoint.position : Vector3.zero;
-            spawnRot = spawnPoint != null ? spawnPoint.rotation : Quaternion.identity;
+            // If bunker not found, fall back to origin
+            spawnPos = Vector3.zero;
+            spawnRot = Quaternion.identity;
         }
 
         spawnedCar = Instantiate(entry.prefab, spawnPos, spawnRot);
@@ -198,6 +231,44 @@ public class SpawnCar : MonoBehaviour
             Debug.LogWarning("[SpawnCar] CameraController not found on mainCamera.");
         }
         Titlesceane.SetActive(false);
+
+        // Enable enemy spawner after player car is spawned
+        var spawner = FindObjectOfType<Spawner>();
+        if (spawner != null)
+        {
+            spawner.SetSpawningEnabled(true);
+        }
+    }
+
+    void OnDestroy()
+    {
+        // Unsubscribe to avoid leaks
+        var wg = FindObjectOfType<WorldGenerator>();
+        if (wg != null)
+        {
+            wg.OnGenerationComplete -= OnWorldGenerationComplete;
+        }
+    }
+
+    void OnWorldGenerationComplete()
+    {
+        // Ensure bunker reference updated before spawning
+        var wg = FindObjectOfType<WorldGenerator>();
+        if (wg != null && wg.spawnedBunkerEntrance != null)
+        {
+            bunkerEntrance = wg.spawnedBunkerEntrance;
+        }
+        else
+        {
+            AutoFindBunkerEntrance();
+        }
+        // Optionally relocate spawn point now that world is ready
+        if (spawnNearBunker && bunkerEntrance != null)
+        {
+            MoveSpawnPointNearBunker();
+        }
+        // Spawn the selected car
+        Play();
     }
 
 #if UNITY_EDITOR
@@ -215,7 +286,7 @@ public class SpawnCar : MonoBehaviour
     // Compute a random spawn position near the bunker entrance.
     void ComputeRandomSpawnNearBunker(out Vector3 spawnPos, out Quaternion spawnRot)
     {
-        spawnPos = bunkerEntrance != null ? bunkerEntrance.position : (spawnPoint != null ? spawnPoint.position : Vector3.zero);
+        spawnPos = bunkerEntrance != null ? bunkerEntrance.position : Vector3.zero;
         spawnRot = bunkerEntrance != null ? bunkerEntrance.rotation : Quaternion.identity;
         if (bunkerEntrance == null) return;
 
@@ -325,12 +396,5 @@ public class SpawnCar : MonoBehaviour
         // Move this GameObject itself near the bunker
         transform.position = spawnPos;
         transform.rotation = spawnRot;
-
-        // Also sync spawnPoint if it exists
-        if (spawnPoint != null)
-        {
-            spawnPoint.position = spawnPos;
-            spawnPoint.rotation = spawnRot;
-        }
     }
 }

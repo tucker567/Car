@@ -6,6 +6,9 @@ public class Spawner : MonoBehaviour
     public float spawnInterval = 5f;
     private float nextSpawnTime;
 
+    [Header("Control")]
+    public bool spawningEnabled = false; // Start disabled; enable via Play button
+
      public Transform player;
      public bool autoFindPlayer;
      public string playerTag = "Player";
@@ -19,6 +22,7 @@ public class Spawner : MonoBehaviour
 
      void Update()
      {
+         if (!spawningEnabled) return;
          // Late player spawn support
             if (player == null && autoFindPlayer)
             {
@@ -37,6 +41,16 @@ public class Spawner : MonoBehaviour
                 nextSpawnTime = Time.time + spawnInterval;
             }
      }
+
+    public void SetSpawningEnabled(bool enabled)
+    {
+        spawningEnabled = enabled;
+        if (enabled)
+        {
+            // reset timer to spawn promptly
+            nextSpawnTime = Time.time + spawnInterval;
+        }
+    }
 
     void SpawnAICars()
     {

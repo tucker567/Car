@@ -5,6 +5,10 @@ using TMPro; // Add this for TextMeshPro
 public class CarHealth : MonoBehaviour
 {
     [SerializeField] float maxHealth = 100f;
+    [Header("Collision Damage Settings")]
+    [SerializeField] float lethalImpactSpeed = 18f; // m/s threshold to trigger explosion/death
+    [SerializeField] float playerDamageOnHit = 20f; // damage dealt to player when an AI hits them lethally
+    [SerializeField] float minDamageSpeed = 10f; // below this, no damage/explosion
     [SerializeField] TMP_Text healthText; // Assign in Inspector
     [SerializeField] Rigidbody carRigidbody; // Assign in Inspector
     [SerializeField] WheelCollider wheelCollider1;
@@ -13,8 +17,10 @@ public class CarHealth : MonoBehaviour
     [SerializeField] WheelCollider wheelCollider4;
     public bool isPlayerCar = false; // Set this in Inspector if it's the player's car
     public BoxCollider boxCollider; // Assign in Inspector if needed
+    public GameObject endScreenUI; // Assign in Inspector if needed
+    public float UIscreenDelay = 3f; // Delay before showing end screen
 
-    float currentHealth;
+    public float currentHealth;
     List<Rigidbody> parts = new List<Rigidbody>();
     bool destroyed = false;
 
@@ -31,30 +37,57 @@ public class CarHealth : MonoBehaviour
             }
         }
 
-        // Auto-find healthText deterministically if not assigned
-        if (healthText == null)
+        // Auto-find healthText only for the player car to avoid AI disabling shared UI
+        if (isPlayerCar)
         {
-            healthText = GameObject.Find("Canvas/HealthText")?.GetComponent<TMP_Text>();
-            if (healthText == null) healthText = GameObject.Find("HealthText")?.GetComponent<TMP_Text>();
             if (healthText == null)
             {
-                GameObject byTag = null;
-                try { byTag = GameObject.FindGameObjectWithTag("HealthText"); } catch { }
-                if (byTag != null) healthText = byTag.GetComponent<TMP_Text>();
+                healthText = GameObject.Find("Canvas/HealthText")?.GetComponent<TMP_Text>();
+                if (healthText == null) healthText = GameObject.Find("HealthText")?.GetComponent<TMP_Text>();
+                if (healthText == null)
+                {
+                    GameObject byTag = null;
+                    try { byTag = GameObject.FindGameObjectWithTag("HealthText"); } catch { }
+                    if (byTag != null) healthText = byTag.GetComponent<TMP_Text>();
+                }
+                if (healthText == null)
+                {
+                    var all = Resources.FindObjectsOfTypeAll<TMP_Text>();
+                    foreach (var t in all) { if (t != null && t.name == "HealthText") { healthText = t; break; } }
+                }
+                if (healthText == null)
+                    Debug.LogWarning("[CarHealth] Player healthText not found. Assign, name, or tag it 'HealthText'.");
             }
-            if (healthText == null)
-            {
-                var all = Resources.FindObjectsOfTypeAll<TMP_Text>();
-                foreach (var t in all) { if (t != null && t.name == "HealthText") { healthText = t; break; } }
-            }
-            if (healthText == null)
-                Debug.LogWarning("[CarHealth] healthText not found. Assign, name, or tag it 'HealthText'.");
+            UpdateHealthUI(); // Ensures initial text
         }
 
-        if (isPlayerCar)
-            UpdateHealthUI();            // Ensures initial text now that we have (or tried to find) it
-        else if (healthText != null)
-            healthText.gameObject.SetActive(false); // Disable for AI
+        // Auto-find endScreenUI only for the player car
+        if (isPlayerCar && endScreenUI == null)
+        {
+            endScreenUI = GameObject.Find("Canvas/EndScreen - Panel");
+            if (endScreenUI == null)
+            {
+                endScreenUI = GameObject.Find("EndScreen - Panel");
+            }
+            if (endScreenUI == null)
+            {
+                var byTag = GameObject.FindGameObjectWithTag("EndScreen - Panel");
+                if (byTag != null) endScreenUI = byTag;
+            }
+            if (endScreenUI == null)
+            {
+                var all = Resources.FindObjectsOfTypeAll<GameObject>();
+                foreach (var go in all) { if (go != null && go.name == "EndScreen - Panel") { endScreenUI = go; break; } }
+            }
+            if (endScreenUI == null)
+            {
+                Debug.LogWarning("[CarHealth] Player endScreenUI not found. Assign, name, or tag it 'EndScreen - Panel'.");
+            }
+            else
+            {
+                endScreenUI.SetActive(false); // Ensure it's hidden at start
+            }
+        }
     }
 
     public void TakeDamage(float amount)
@@ -137,6 +170,14 @@ public class CarHealth : MonoBehaviour
         {
             aiFolowCar.enabled = false;
         }
+
+        // Show end screen after a few seconds if this is the player car
+        if (isPlayerCar && endScreenUI != null)
+        {
+
+            endScreenUI.SetActive(true);
+
+        }
     }
 
     void UpdateHealthUI()
@@ -154,5 +195,48 @@ public class CarHealth : MonoBehaviour
     public float CurrentHealth
     {
         get { return currentHealth; }
+    }
+
+    void OnCollisionEnter(Collision collision)
+    {
+        if (destroyed) return;
+
+        // Try get the other car's health component
+        var otherHealth = collision.collider.GetComponentInParent<CarHealth>();
+        if (otherHealth == null) return; // Only care about car-to-car collisions
+
+        // Compute relative impact speed (approximate)
+        float relativeSpeed = collision.relativeVelocity.magnitude;
+        if (relativeSpeed < minDamageSpeed) return; // ignore small bumps
+
+        bool thisIsPlayer = isPlayerCar;
+        bool otherIsPlayer = otherHealth.isPlayerCar;
+
+        // AI hits Player hard enough -> AI explodes and dies, Player takes damage
+        if (!thisIsPlayer && otherIsPlayer && relativeSpeed >= lethalImpactSpeed)
+        {
+            // This AI dies
+            TakeDamage(currentHealth + 999f);
+
+            // Damage the player a bit
+            otherHealth.TakeDamage(playerDamageOnHit);
+            return;
+        }
+
+        // Player hits AI hard enough -> AI explodes and dies, Player takes small damage too
+        if (thisIsPlayer && !otherIsPlayer && relativeSpeed >= lethalImpactSpeed)
+        {
+            otherHealth.TakeDamage(otherHealth.CurrentHealth + 999f);
+            TakeDamage(playerDamageOnHit * 0.5f);
+            return;
+        }
+
+        // AI-to-AI lethal collision -> both explode and die
+        if (!thisIsPlayer && !otherIsPlayer && relativeSpeed >= lethalImpactSpeed)
+        {
+            TakeDamage(currentHealth + 999f);
+            otherHealth.TakeDamage(otherHealth.CurrentHealth + 999f);
+            return;
+        }
     }
 }

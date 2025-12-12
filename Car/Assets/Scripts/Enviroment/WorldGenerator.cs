@@ -262,6 +262,31 @@ public class WorldGenerator : MonoBehaviour
         PlacePropGroups(terrainGrid);
     }
 
+    // Unload current world: destroy all child objects and reset runtime refs.
+    public void UnloadWorld()
+    {
+        Note("Unloading world...");
+        // Stop any running generation coroutines tied to this component
+        StopAllCoroutines();
+
+        // Destroy all children under this generator
+        for (int i = transform.childCount - 1; i >= 0; i--)
+        {
+            var child = transform.GetChild(i);
+#if UNITY_EDITOR
+            if (!Application.isPlaying) DestroyImmediate(child.gameObject);
+            else Destroy(child.gameObject);
+#else
+            Destroy(child.gameObject);
+#endif
+        }
+
+        // Reset runtime references/state
+        spawnedBunkerEntrance = null;
+        OnProgress?.Invoke(0f);
+        Note("World unloaded.");
+    }
+
     // Public delayed entry point so UI can update before heavy work starts
     public void StartWorldGenerationWithDelay()
     {

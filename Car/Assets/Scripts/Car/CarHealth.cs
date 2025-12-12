@@ -18,6 +18,7 @@ public class CarHealth : MonoBehaviour
     public bool isPlayerCar = false; // Set this in Inspector if it's the player's car
     public BoxCollider boxCollider; // Assign in Inspector if needed
     public GameObject endScreenUI; // Assign in Inspector if needed
+    [Tooltip("Tag used to find End Screen UI when not assigned")] public string endScreenTag = "EndScreenUI";
     public float UIscreenDelay = 3f; // Delay before showing end screen
 
     public float currentHealth;
@@ -64,15 +65,42 @@ public class CarHealth : MonoBehaviour
         // Auto-find endScreenUI only for the player car
         if (isPlayerCar && endScreenUI == null)
         {
-            endScreenUI = GameObject.Find("Canvas/EndScreen - Panel");
+            // Prefer finding via tag to avoid name dependencies
+            if (!string.IsNullOrEmpty(endScreenTag))
+            {
+                try
+                {
+                    var byTag = GameObject.FindGameObjectWithTag(endScreenTag);
+                    if (byTag != null) endScreenUI = byTag;
+                }
+                catch { }
+                // If not found, search inactive objects via Resources
+                if (endScreenUI == null)
+                {
+                    var allByTag = Resources.FindObjectsOfTypeAll<GameObject>();
+                    foreach (var go in allByTag)
+                    {
+                        if (go != null)
+                        {
+                            bool matches = false;
+                            try { matches = go.CompareTag(endScreenTag); } catch { matches = false; }
+                            if (matches)
+                            {
+                                endScreenUI = go;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+            // Fallbacks to name-based search for backwards compatibility
             if (endScreenUI == null)
             {
-                endScreenUI = GameObject.Find("EndScreen - Panel");
+                endScreenUI = GameObject.Find("Canvas/EndScreen - Panel");
             }
             if (endScreenUI == null)
             {
-                var byTag = GameObject.FindGameObjectWithTag("EndScreen - Panel");
-                if (byTag != null) endScreenUI = byTag;
+                endScreenUI = GameObject.Find("EndScreen - Panel");
             }
             if (endScreenUI == null)
             {
@@ -81,10 +109,11 @@ public class CarHealth : MonoBehaviour
             }
             if (endScreenUI == null)
             {
-                Debug.LogWarning("[CarHealth] Player endScreenUI not found. Assign, name, or tag it 'EndScreen - Panel'.");
+                Debug.LogWarning("[CarHealth] Player endScreenUI not found. Assign it, or tag it '" + endScreenTag + "'.");
             }
             else
             {
+                Debug.Log("[CarHealth] Found endScreenUI object '" + endScreenUI.name + "'. ActiveSelf=" + endScreenUI.activeSelf + ", scene=" + (endScreenUI.scene.IsValid() ? endScreenUI.scene.name : "(inactive asset)") );
                 endScreenUI.SetActive(false); // Ensure it's hidden at start
             }
         }

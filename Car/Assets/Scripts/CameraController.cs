@@ -21,6 +21,13 @@ public class CameraController : MonoBehaviour
     public float minYaw = -60f; // Minimum yaw relative to car
     public float maxYaw = 60f;  // Maximum yaw relative to car
     public float edgeSensitivityMultiplier = 3f; // How much to boost sensitivity at edge
+    [Header("Default Positions")]
+    public float XDefault;
+    public float YDefault;
+    public float ZDefault;
+    public float XDefaultRotation;
+    public float YDefaultRotation;
+    public float ZDefaultRotation;
 
     void LateUpdate()
     {
@@ -80,4 +87,13 @@ public class CameraController : MonoBehaviour
         // Always look at the car's center
         transform.LookAt(target.position);
     }
+
+    // Move the cameras transform to default location 
+    public void ResetCameraPosition()
+    {
+        transform.position = new Vector3(XDefault, YDefault, ZDefault);
+        transform.rotation = Quaternion.Euler(XDefaultRotation, YDefaultRotation, ZDefaultRotation);
+    }
+
+
 }

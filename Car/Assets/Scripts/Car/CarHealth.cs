@@ -203,8 +203,11 @@ public class CarHealth : MonoBehaviour
         // Show end screen after a few seconds if this is the player car
         if (isPlayerCar && endScreenUI != null)
         {
-
             endScreenUI.SetActive(true);
+            var popUpCanvas = GameObject.Find("PopUpUI - Canvas");
+            if (popUpCanvas != null) popUpCanvas.SetActive(false);
+            var gameplayCanvas = GameObject.Find("GamePlay - Canvas");
+            if (gameplayCanvas != null) gameplayCanvas.SetActive(false);
 
         }
     }

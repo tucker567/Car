@@ -22,9 +22,10 @@ public class WoldUnloader : MonoBehaviour
 
     public Transform player;
     public float charge;
-    private bool uiShown;
+    private bool uiShown; // no longer gates showing; kept for backward compatibility
     private bool insideBunker;
     private float reopenAtTime = -1f;
+    private bool panelManuallyClosed = false;
 
     void Awake()
     {
@@ -57,65 +58,80 @@ public class WoldUnloader : MonoBehaviour
         }
 
         // Handle timed re-open if panel was closed via button and player remains inside
-        if (UIPanel != null && !UIPanel.activeSelf && uiShown && insideBunker && reopenAtTime > 0f && Time.time >= reopenAtTime)
+        if (UIPanel != null && !UIPanel.activeSelf && insideBunker && reopenAtTime > 0f && Time.time >= reopenAtTime)
         {
             UIPanel.SetActive(true);
+            var popUpCanvas = GameObject.Find("PopUpUI - Canvas");
+            if (popUpCanvas != null) popUpCanvas.SetActive(false);
+            var gameplayCanvas = GameObject.Find("GamePlay - Canvas");
+            if (gameplayCanvas != null) gameplayCanvas.SetActive(false);
             reopenAtTime = -1f;
             Debug.Log("WoldUnloader: Timed reopen of panel.");
         }
 
+        // Continuously evaluate whether player is inside bunker volume
+        bool wasInside = insideBunker;
+        insideBunker = false;
         if (bunkerObject != null && bunkerObject.TryGetComponent<Collider>(out var col))
         {
-            OnTriggerStay(col);
-        }
-    }
-
-    void OnTriggerStay(Collider other)
-    {
-        // Require bunker trigger volume
-        if (!other.CompareTag(bunkerTag)) return;
-
-        // Ensure player exists and is the one inside
-        if (player == null)
-        {
-            var tagged = GameObject.FindGameObjectWithTag(playerTag);
-            if (tagged != null) player = tagged.transform;
-        }
-        if (player == null) return;
-
-        // Only charge when the player is inside this trigger
-        // Using distance check to player's position vs closest point
-        Vector3 cp = other.ClosestPoint(player.position);
-        if ((cp - player.position).sqrMagnitude < 0.01f)
-        {
-            insideBunker = true;
-            charge = Mathf.Min(maxCharge, charge + chargeRatePerSecond * Time.deltaTime);
-            UpdateChargeUI();
-            if (!uiShown && charge >= maxCharge)
+            // Ensure player reference
+            if (player == null && autoFindPlayer)
             {
-                uiShown = true;
-                if (UIPanel != null) UIPanel.SetActive(true);
-                Debug.Log("WoldUnloader: Charge complete. UI enabled.");
+                var tagged = GameObject.FindGameObjectWithTag(playerTag);
+                if (tagged != null) player = tagged.transform;
+            }
+            if (player != null)
+            {
+                // Use collider bounds to determine containment to avoid jitter
+                insideBunker = col.bounds.Contains(player.position);
+                if (insideBunker)
+                {
+                    // Charge up while inside
+                    charge = Mathf.Min(maxCharge, charge + chargeRatePerSecond * Time.deltaTime);
+                    UpdateChargeUI();
+                    // Show bunker panel whenever fully charged and currently hidden
+                    if (charge >= maxCharge && UIPanel != null && !UIPanel.activeSelf && !panelManuallyClosed)
+                    {
+                        UIPanel.SetActive(true);
+                        var popUpCanvas = GameObject.Find("PopUpUI - Canvas");
+                        if (popUpCanvas != null) popUpCanvas.SetActive(false);
+                        var gameplayCanvas = GameObject.Find("GamePlay - Canvas");
+                        if (gameplayCanvas != null) gameplayCanvas.SetActive(false);
+                        Debug.Log("WoldUnloader: Charge complete. UI enabled.");
+                    }
+                }
             }
         }
-    }
 
-    void OnTriggerExit(Collider other)
-    {
-        if (!other.CompareTag(bunkerTag)) return;
-        insideBunker = false;
-        // Reset charge when leaving the bunker
-        charge = 0f;
-        UpdateChargeUI();
-        if (UIPanel != null && UIPanel.activeSelf)
+        // Handle leaving bunker (no auto-close; keep panel state)
+        if (wasInside && !insideBunker)
         {
-            UIPanel.SetActive(false);
-            Debug.Log("WoldUnloader: Auto-closed panel on exit.");
+            reopenAtTime = -1f;
+            panelManuallyClosed = false; // allow future auto-open after exit/enter cycle
         }
-        // Reset UI state so it can show again when re-entering after recharge
-        uiShown = false;
-        reopenAtTime = -1f;
+        
+        // if charge is greater than 0 enable charge text UI
+        if (charge > 0f && UIChargeText != null && !UIChargeText.gameObject.activeSelf)
+        {
+            UIChargeText.gameObject.SetActive(true);
+        }
+        // if charge is 0 disable charge text UI
+        else if (charge <= 0f && UIChargeText != null && UIChargeText.gameObject.activeSelf)
+        {
+            UIChargeText.gameObject.SetActive(false);
+        }
+
+        // Decay charge when player is not inside bunker
+        if (!insideBunker && charge > 0f)
+        {
+            charge = Mathf.Max(0f, charge - chargeRatePerSecond * Time.deltaTime);
+            UpdateChargeUI();
+        }
     }
+    
+    // Remove reliance on Unity's trigger callbacks; handled in Update.
+
+    // OnTriggerExit is no longer used for auto-closing; Update handles state.
 
     void UpdateChargeUI()
     {
@@ -131,15 +147,20 @@ public class WoldUnloader : MonoBehaviour
         if (UIPanel == null) return;
         UIPanel.SetActive(false);
         // Schedule reopen only if player still inside and already fully charged
-        if (insideBunker && uiShown)
+        if (insideBunker && charge >= maxCharge)
         {
             reopenAtTime = Time.time + manualCloseDuration;
+            panelManuallyClosed = false; // temporary close should auto re-open
             Debug.Log("WoldUnloader: Panel closed temporarily for " + manualCloseDuration + "s.");
         }
         else
         {
             reopenAtTime = -1f;
+            panelManuallyClosed = true;
         }
+        // Set the charge to zero upon closing the panel
+        charge = 0f;
+        UpdateChargeUI();
     }
 
     // Optional Button: immediately close with no timed reopen
@@ -148,6 +169,30 @@ public class WoldUnloader : MonoBehaviour
         if (UIPanel == null) return;
         UIPanel.SetActive(false);
         reopenAtTime = -1f;
+        // Allow future reopen when conditions are met
+        uiShown = false;
+        panelManuallyClosed = true; // suppress auto-open until exit/enter or explicit reset
         Debug.Log("WoldUnloader: Panel closed.");
+    }
+
+    // Find all cars and aicars in the scene and remove them
+    public void UnloadAllCars()
+    {
+        var cars = GameObject.FindGameObjectsWithTag("playerCar");
+        var aiCars = GameObject.FindGameObjectsWithTag("AICar");
+        int totalRemoved = 0;
+
+        foreach (var car in cars)
+        {
+            Destroy(car);
+            totalRemoved++;
+        }
+        foreach (var aiCar in aiCars)
+        {
+            Destroy(aiCar);
+            totalRemoved++;
+        }
+
+        Debug.Log("WoldUnloader: Unloaded " + totalRemoved + " cars from the scene.");
     }
 }

@@ -14,11 +14,17 @@ public class Score : MonoBehaviour
     public int DistanceTravelled;
     public int DistanceTravelledMultiplier = 5;
     public int DistanceTravelledTotalScore;
+    [Header("Quest Score")]
+    [Tooltip("Total bonus accumulated from completed quests.")]
+    public int questBonusAccum = 0;
+    [Tooltip("Default points awarded per completed quest if no amount is provided.")]
+    public int questCompletionBonusDefault = 1000;
     // Quests disabled per request; kept for reference but unused
     // public int QuestsCompleted;
     // public int QuestsCompletedMultiplier = 100;
     [Header("UI Elements")]
     public TMPro.TMP_Text scoreText;
+    public GameObject smallblackhomebutton;
     [Header("Display Settings")]
     public int displayedScore;
     public float countUpSpeed = 250f; // points per second
@@ -35,6 +41,7 @@ public class Score : MonoBehaviour
     private bool _hasLastPosition;
     private float _distanceAccum; // meters
     private float _timeAccum;     // seconds while scoring
+    private float _initialCountUpSpeed; // stored to allow reliable resets
 
     // High score persistence
     public static int highScore = 0;
@@ -43,12 +50,14 @@ public class Score : MonoBehaviour
     // Count-up coroutine handle
     private Coroutine _countUpCoroutine;
 
+
     void Start()
     {
         currentScore = 0;
         _distanceAccum = 0f;
         _timeAccum = 0f;
         _hasLastPosition = false;
+        _initialCountUpSpeed = countUpSpeed;
 
         // Load high score
         highScore = GetHighScore();
@@ -108,7 +117,8 @@ public class Score : MonoBehaviour
     public void CalculateScore()
     {
         currentScore = (Timealive * TimealiveMultiplier) +
-                       (DistanceTravelled * DistanceTravelledMultiplier);
+                       (DistanceTravelled * DistanceTravelledMultiplier) +
+                       (questBonusAccum);
         if (scoreText != null)
         {
             scoreText.text = "Score: " + displayedScore.ToString();
@@ -156,6 +166,11 @@ public class Score : MonoBehaviour
             scoreText.gameObject.SetActive(true);
             highScoreText.gameObject.SetActive(true);
         }
+        
+        if (smallblackhomebutton != null)
+        {
+            smallblackhomebutton.SetActive(false);
+        }
     }
 
     public void ResetScore(bool resetHighScore = false)
@@ -165,6 +180,7 @@ public class Score : MonoBehaviour
         _timeAccum = 0f;
         Timealive = 0;
         DistanceTravelled = 0;
+        questBonusAccum = 0;
         _hasLastPosition = false;
         CalculateScore();
         displayedScore = currentScore;
@@ -175,6 +191,83 @@ public class Score : MonoBehaviour
             if (highScoreText != null)
             {
                 highScoreText.text = "High Score: 0";
+            }
+        }
+    }
+
+    // Reset only the displayed score and count-up speed (does not affect actual accumulated score)
+    public void ResetDisplayedScoreAndSpeed()
+    {
+        // Stop any ongoing count-up animation
+        if (_countUpCoroutine != null)
+        {
+            StopCoroutine(_countUpCoroutine);
+            _countUpCoroutine = null;
+        }
+
+        // Reset the displayed score and restore count-up speed to its initial value
+        displayedScore = 0;
+        countUpSpeed = _initialCountUpSpeed;
+
+        // Refresh the UI immediately
+        if (scoreText != null)
+        {
+            scoreText.text = "Score: " + displayedScore.ToString();
+        }
+    }
+
+    // Reset all round-related score state while preserving the saved high score
+    public void ResetForNewRound()
+    {
+        // Stop any ongoing count-up animation
+        if (_countUpCoroutine != null)
+        {
+            StopCoroutine(_countUpCoroutine);
+            _countUpCoroutine = null;
+        }
+
+        // Reset live scoring state (but do not clear saved high score)
+        ResetScore(resetHighScore: false);
+
+        // Ensure displayed score starts at zero and count-up speed is restored
+        displayedScore = 0;
+        countUpSpeed = _initialCountUpSpeed;
+
+        // Rebind last position to avoid distance spike on next movement
+        if (player != null)
+        {
+            _lastPosition = player.position;
+            _hasLastPosition = true;
+        }
+
+        // Refresh labels
+        if (scoreText != null)
+        {
+            scoreText.text = "Score: 0";
+        }
+        RefreshHighScoreLabel();
+    }
+
+    // Convenience: reset state and begin scoring for a new round
+    public void StartNewRound()
+    {
+        ResetForNewRound();
+        StartScoring();
+    }
+
+    // Award quest completion points and refresh UI immediately if scoring is active
+    public void AddQuestBonus(int points = -1)
+    {
+        int add = points < 0 ? questCompletionBonusDefault : points;
+        if (add <= 0) return;
+        questBonusAccum += add;
+        CalculateScore();
+        if (scoringEnabled)
+        {
+            displayedScore = currentScore;
+            if (scoreText != null)
+            {
+                scoreText.text = "Score: " + displayedScore.ToString();
             }
         }
     }

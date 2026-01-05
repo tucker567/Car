@@ -253,6 +253,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CarHealth
   maxHealth: 200
+  lethalImpactSpeed: 18
+  playerDamageOnHit: 20
+  minDamageSpeed: 10
   healthText: {fileID: 0}
   carRigidbody: {fileID: 6410409409001862846}
   wheelCollider1: {fileID: 2114291455802639633}
@@ -261,6 +264,10 @@ MonoBehaviour:
   wheelCollider4: {fileID: 4089655997578068238}
   isPlayerCar: 1
   boxCollider: {fileID: 2410794847068953059}
+  endScreenUI: {fileID: 0}
+  endScreenTag: EndScreenUI - Panel
+  UIscreenDelay: 3
+  currentHealth: 0
 --- !u!114 &4405057869381150677
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2185,6 +2192,10 @@ PrefabInstance:
     - target: {fileID: 8018269217759853281, guid: b40689e65d2de294a826d383611206db, type: 3}
       propertyPath: m_Name
       value: AA Turret 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8018269217759853281, guid: b40689e65d2de294a826d383611206db, type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

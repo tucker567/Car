@@ -61,6 +61,12 @@ public class QuestPickerManager : MonoBehaviour
     [Tooltip("Seconds to keep active quest panel visible after completion before hiding.")] public float activePanelHideDelayAfterComplete = 3f;
     [Tooltip("Hide panel on failed quest as well.")] public bool hidePanelOnFail = true;
 
+    [Header("Scoring")]
+    [Tooltip("Points awarded to the player when a quest is completed successfully.")]
+    public int questCompletionScore = 500;
+    [Tooltip("If true, show the reward amount in the active quest text on completion.")]
+    public bool showRewardOnCompleteText = true;
+
     private Coroutine _hidePanelRoutine;
 
     private float _nextRefreshTime;
@@ -402,8 +408,28 @@ public class QuestPickerManager : MonoBehaviour
 
     private void OnQuestCompleted(bool success)
     {
-        if (activeQuestText != null)
-            activeQuestText.text = success ? "Quest complete!" : "Quest failed.";
+        if (success)
+        {
+            // Award score for successful quest completion
+            var score = FindObjectOfType<Score>();
+            if (score != null)
+            {
+                score.AddQuestBonus(questCompletionScore);
+                if (showRewardOnCompleteText && activeQuestText != null)
+                {
+                    activeQuestText.text = $"Quest complete! +{questCompletionScore}";
+                }
+            }
+            else if (activeQuestText != null)
+            {
+                activeQuestText.text = "Quest complete!";
+            }
+        }
+        else
+        {
+            if (activeQuestText != null)
+                activeQuestText.text = "Quest failed.";
+        }
         if (_hidePanelRoutine != null)
         {
             StopCoroutine(_hidePanelRoutine);

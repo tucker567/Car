@@ -76,10 +76,22 @@ public class Radio : MonoBehaviour
         if (audioSource != null)
             audioSource.volume = volume;
 
-        if (playlists.Count > 0 && playlists[0].songs.Count > 0)
+        if (playlists != null && playlists.Count > 0)
         {
-            ShuffleSongs();
-            PlaySong();
+            List<int> valid = new List<int>();
+            for (int i = 0; i < playlists.Count; i++)
+            {
+                var pl = playlists[i];
+                if (pl != null && pl.songs != null && pl.songs.Count > 0)
+                    valid.Add(i);
+            }
+
+            if (valid.Count > 0)
+            {
+                currentPlaylist = valid[UnityEngine.Random.Range(0, valid.Count)];
+                ShuffleSongs();
+                PlaySong();
+            }
         }
     }
 

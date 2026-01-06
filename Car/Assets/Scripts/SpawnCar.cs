@@ -1,6 +1,7 @@
 using UnityEngine;
 using TMPro;
 using System.Collections.Generic;
+using UnityEngine.UI;
 
 public class SpawnCar : MonoBehaviour
 {
@@ -9,6 +10,9 @@ public class SpawnCar : MonoBehaviour
     {
         public string displayName;
         public GameObject prefab;
+        public Sprite icon; // Image to display for this car
+        [TextArea]
+        public string description; // Description to display for this car
     }
 
     [Header("Car Selection")]
@@ -18,6 +22,10 @@ public class SpawnCar : MonoBehaviour
     [Header("UI")]
     public TMP_Text carNameText;          // Auto-found if left null
     public string carNameObjectName = "CarNameText"; // Name or Canvas/CarNameText path
+    public Image carImage;                 // Auto-found if left null
+    public string carImageObjectName = "CarImage"; // Name or Canvas/CarImage path
+    public TMP_Text carDescriptionText; // Auto-found if left null
+    public string carDescriptionObjectName = "CarDeffText (TMP)"; // Name or Canvas/CarDescriptionText path
 
     [Header("Spawn Settings")]
     public Camera mainCamera;
@@ -48,6 +56,8 @@ public class SpawnCar : MonoBehaviour
         AutoFindBunkerEntrance();
 
         AutoFindCarNameText();
+        AutoFindCarImage();
+        AutoFindCarDescriptionText();
         AutoFindBunkerEntrance();
         ClampSelectedIndex();
         UpdateCarNameUI();
@@ -107,6 +117,75 @@ public class SpawnCar : MonoBehaviour
             Debug.LogWarning($"[SpawnCar] Car name text '{carNameObjectName}' not found. Assign manually or rename/tag it.");
     }
 
+    void AutoFindCarImage()
+    {
+        if (carImage != null) return;
+
+        // Try path then root name
+        var go = GameObject.Find($"Canvas/{carImageObjectName}") ?? GameObject.Find(carImageObjectName);
+        if (go != null) carImage = go.GetComponent<Image>();
+
+        // Tag lookup
+        if (carImage == null)
+        {
+            GameObject byTag = null;
+            try { byTag = GameObject.FindGameObjectWithTag(carImageObjectName); } catch { }
+            if (byTag != null) carImage = byTag.GetComponent<Image>();
+        }
+
+        // Exact-name scan
+        if (carImage == null)
+        {
+            var all = Resources.FindObjectsOfTypeAll<Image>();
+            foreach (var t in all)
+            {
+                if (t != null && t.name == carImageObjectName)
+                {
+                    carImage = t;
+                    break;
+                }
+            }
+        }
+
+        if (carImage == null)
+            Debug.LogWarning($"[SpawnCar] Car image '{carImageObjectName}' not found. Assign manually or rename/tag it.");
+    }
+
+    void AutoFindCarDescriptionText()
+    {
+        if (carDescriptionText != null) return;
+
+        // Try path then root name
+        carDescriptionText = GameObject.Find($"Canvas/{carDescriptionObjectName}")?.GetComponent<TMP_Text>();
+        if (carDescriptionText == null)
+            carDescriptionText = GameObject.Find(carDescriptionObjectName)?.GetComponent<TMP_Text>();
+
+        // Tag lookup
+        if (carDescriptionText == null)
+        {
+            GameObject byTag = null;
+            try { byTag = GameObject.FindGameObjectWithTag(carDescriptionObjectName); } catch { }
+            if (byTag != null) carDescriptionText = byTag.GetComponent<TMP_Text>();
+        }
+
+        // Exact-name scan
+        if (carDescriptionText == null)
+        {
+            var all = Resources.FindObjectsOfTypeAll<TMP_Text>();
+            foreach (var t in all)
+            {
+                if (t != null && t.name == carDescriptionObjectName)
+                {
+                    carDescriptionText = t;
+                    break;
+                }
+            }
+        }
+
+        if (carDescriptionText == null)
+            Debug.LogWarning($"[SpawnCar] Car description text '{carDescriptionObjectName}' not found. Assign manually or rename/tag it.");
+    }
+
     void ClampSelectedIndex()
     {
         if (cars.Count == 0) { selectedIndex = 0; return; }
@@ -145,13 +224,47 @@ public class SpawnCar : MonoBehaviour
 
     void UpdateCarNameUI()
     {
-        if (carNameText == null) return;
-        if (cars.Count == 0)
+        // Update name
+        if (carNameText != null)
         {
-            carNameText.text = "No Cars";
-            return;
+            if (cars.Count == 0)
+            {
+                carNameText.text = "No Cars";
+            }
+            else
+            {
+                carNameText.text = cars[selectedIndex].displayName;
+            }
         }
-        carNameText.text = cars[selectedIndex].displayName;
+
+        // Update image
+        if (carImage != null)
+        {
+            if (cars.Count == 0)
+            {
+                carImage.sprite = null;
+                carImage.enabled = false;
+            }
+            else
+            {
+                var sprite = cars[selectedIndex].icon;
+                carImage.sprite = sprite;
+                carImage.enabled = sprite != null;
+            }
+        }
+
+        // Update description
+        if (carDescriptionText != null)
+        {
+            if (cars.Count == 0)
+            {
+                carDescriptionText.text = string.Empty;
+            }
+            else
+            {
+                carDescriptionText.text = cars[selectedIndex].description ?? string.Empty;
+            }
+        }
     }
 
     public void NextCar()

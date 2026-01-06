@@ -12,6 +12,8 @@ TagManager:
   - Crate
   - Bunker
   - EndScreenUI - Panel
+  - EndScreen - Panel
+  - BoostSlider
   layers:
   - Default
   - TransparentFX

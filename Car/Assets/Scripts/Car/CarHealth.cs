@@ -20,6 +20,7 @@ public class CarHealth : MonoBehaviour
     public GameObject endScreenUI; // Assign in Inspector if needed
     [Tooltip("Tag used to find End Screen UI when not assigned")] public string endScreenTag = "EndScreenUI";
     public float UIscreenDelay = 3f; // Delay before showing end screen
+    public string MarkersName = "WayPoint - Image 1(Clone)"; // Name of the parent object containing markers
 
     public float currentHealth;
     List<Rigidbody> parts = new List<Rigidbody>();
@@ -209,6 +210,16 @@ public class CarHealth : MonoBehaviour
             var gameplayCanvas = GameObject.Find("GamePlay - Canvas");
             if (gameplayCanvas != null) gameplayCanvas.SetActive(false);
 
+        }
+
+        // Disable the specific waypoint UI if present
+        if (isPlayerCar && !string.IsNullOrEmpty(MarkersName))
+        {
+            var waypoint = GameObject.Find(MarkersName);
+            if (waypoint != null)
+            {
+                waypoint.SetActive(false);
+            }
         }
     }
 

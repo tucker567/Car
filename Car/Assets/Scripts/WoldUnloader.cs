@@ -20,12 +20,20 @@ public class WoldUnloader : MonoBehaviour
     [Tooltip("When closed via button, seconds to keep panel hidden.")]
     public float manualCloseDuration = 5f;
 
+    [Header("Other Settings")]
+    public QuestPickerManager questPickerManager;
+    [Tooltip("When true, another system (e.g., QuestPickerManager) controls UIChargeText visibility and content.")]
+    public bool allowExternalChargeTextControl = false;
+
     public Transform player;
     public float charge;
     private bool uiShown; // no longer gates showing; kept for backward compatibility
     private bool insideBunker;
     private float reopenAtTime = -1f;
     private bool panelManuallyClosed = false;
+
+    // Expose bunker state for coordination with other systems
+    public bool IsInsideBunker => insideBunker;
 
     void Awake()
     {
@@ -110,15 +118,18 @@ public class WoldUnloader : MonoBehaviour
             panelManuallyClosed = false; // allow future auto-open after exit/enter cycle
         }
         
-        // if charge is greater than 0 enable charge text UI
-        if (charge > 0f && UIChargeText != null && !UIChargeText.gameObject.activeSelf)
+        if (!allowExternalChargeTextControl)
         {
-            UIChargeText.gameObject.SetActive(true);
-        }
-        // if charge is 0 disable charge text UI
-        else if (charge <= 0f && UIChargeText != null && UIChargeText.gameObject.activeSelf)
-        {
-            UIChargeText.gameObject.SetActive(false);
+            // if charge is greater than 0 enable charge text UI
+            if (charge > 0f && UIChargeText != null && !UIChargeText.gameObject.activeSelf)
+            {
+                UIChargeText.gameObject.SetActive(true);
+            }
+            // if charge is 0 disable charge text UI
+            else if (charge <= 0f && UIChargeText != null && UIChargeText.gameObject.activeSelf)
+            {
+                UIChargeText.gameObject.SetActive(false);
+            }
         }
 
         // Decay charge when player is not inside bunker
@@ -135,6 +146,7 @@ public class WoldUnloader : MonoBehaviour
 
     void UpdateChargeUI()
     {
+        if (allowExternalChargeTextControl) return; // another system manages the text content
         if (UIChargeText != null)
         {
             UIChargeText.text = Mathf.RoundToInt(charge) + "%";
@@ -194,5 +206,13 @@ public class WoldUnloader : MonoBehaviour
         }
 
         Debug.Log("WoldUnloader: Unloaded " + totalRemoved + " cars from the scene.");
+        charge = 0f;
+        UpdateChargeUI();
+    }
+
+    public void Quitapplication()
+    {
+        Debug.Log("WoldUnloader: Quitting application.");
+        Application.Quit();
     }
 }

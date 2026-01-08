@@ -60,6 +60,8 @@ public class QuestPickerManager : MonoBehaviour
     [Header("UI Behavior")]
     [Tooltip("Seconds to keep active quest panel visible after completion before hiding.")] public float activePanelHideDelayAfterComplete = 3f;
     [Tooltip("Hide panel on failed quest as well.")] public bool hidePanelOnFail = true;
+    [Tooltip("If false, QuestPickerManager will not touch the tower charge text UI.")]
+    public bool enableTowerChargeText = true;
 
     [Header("Scoring")]
     [Tooltip("Points awarded to the player when a quest is completed successfully.")]
@@ -67,10 +69,13 @@ public class QuestPickerManager : MonoBehaviour
     [Tooltip("If true, show the reward amount in the active quest text on completion.")]
     public bool showRewardOnCompleteText = true;
 
+    [Header("Other Settings")]
+    public WoldUnloader woldUnloader;
+
     private Coroutine _hidePanelRoutine;
 
     private float _nextRefreshTime;
-    private float _currentCharge = 0f;
+    public float _currentCharge = 0f;
     private GameObject _player;
     private float _nextChargeAllowedTime = 0f;
     private bool _selectionSpawned = false;
@@ -83,10 +88,10 @@ public class QuestPickerManager : MonoBehaviour
     {
         if (questListContainer != null)
             questListContainer.style.display = DisplayStyle.None;
-        if (towerchargeText != null)
+        if (towerchargeText != null && ShouldManageTowerChargeText())
         {
             towerchargeText.gameObject.SetActive(false);
-            towerchargeText.text = "0";
+            towerchargeText.text = "0%";
         }
         // Initialize quest canvas and panels
         if (questCanvas != null)
@@ -188,10 +193,16 @@ public class QuestPickerManager : MonoBehaviour
             {
                 _currentCharge += Time.deltaTime * 20f; // Charge rate
                 _currentCharge = Mathf.Min(_currentCharge, 100f);
-                if (towerchargeText != null)
+                // If sharing the charge text with WoldUnloader and we're outside the bunker,
+                // take ownership so WoldUnloader doesn't hide or overwrite the text.
+                if (IsSharedWithWoldUnloader() && woldUnloader != null && !woldUnloader.IsInsideBunker)
+                {
+                    woldUnloader.allowExternalChargeTextControl = true;
+                }
+                if (towerchargeText != null && ShouldManageTowerChargeText())
                 {
                     towerchargeText.gameObject.SetActive(true);
-                    towerchargeText.text = Mathf.FloorToInt(_currentCharge).ToString();
+                    towerchargeText.text = Mathf.FloorToInt(_currentCharge).ToString() + "%";
                 }
                 if (questListContainer != null && _currentCharge < 100f)
                     questListContainer.style.display = DisplayStyle.None;
@@ -204,10 +215,15 @@ public class QuestPickerManager : MonoBehaviour
         }
         else
         {
-            _currentCharge = 0f;
-            if (towerchargeText != null)
+            // Release ownership back to WoldUnloader when not managing
+            if (IsSharedWithWoldUnloader() && woldUnloader != null)
             {
-                towerchargeText.text = "0";
+                woldUnloader.allowExternalChargeTextControl = false;
+            }
+            _currentCharge = 0f;
+            if (towerchargeText != null && ShouldManageTowerChargeText())
+            {
+                towerchargeText.text = "0%";
                 towerchargeText.gameObject.SetActive(false);
             }
             if (questListContainer != null)
@@ -470,5 +486,23 @@ public class QuestPickerManager : MonoBehaviour
         if (fitter == null) fitter = buttonContainer.gameObject.AddComponent<ContentSizeFitter>();
         fitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
         fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+    }
+
+    // If QuestPickerManager's towerchargeText is the same object managed by WoldUnloader.UIChargeText,
+    // avoid changing its visibility/text to prevent conflicts.
+    private bool ShouldManageTowerChargeText()
+    {
+        if (!enableTowerChargeText) return false;
+        // If shared with WoldUnloader, only manage it when outside the bunker
+        if (IsSharedWithWoldUnloader())
+        {
+            return woldUnloader != null && !woldUnloader.IsInsideBunker;
+        }
+        return true;
+    }
+
+    private bool IsSharedWithWoldUnloader()
+    {
+        return woldUnloader != null && woldUnloader.UIChargeText != null && towerchargeText == woldUnloader.UIChargeText;
     }
 }

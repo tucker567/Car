@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using TMPro;
-using UnityEngine.UI;
 
 public class Car : MonoBehaviour
 {
@@ -14,7 +13,7 @@ public class Car : MonoBehaviour
     public float heatCoolRate = 20f; // per second while not boosting
     public float overheatCoolRate = 5f; // per second while overheated
     public float boostForce = 5000f;
-    public Slider BoostSlider;
+    public TMP_Text BoostText;
     private bool boosting = false;
     private bool overheated = false;
     public float overheatSlowMultiplier = 0.5f; // Car speed when overheated, larger the number, the slower
@@ -69,51 +68,39 @@ public class Car : MonoBehaviour
         // Add this to auto-find CarHealth if not assigned
         if (carHealth == null)
             carHealth = GetComponent<CarHealth>();
-        // Auto-find BoostSlider deterministically if not assigned
-        if (BoostSlider == null)
+        // Auto-find BoostText deterministically if not assigned
+        if (BoostText == null)
         {
-            // 1) Prefer exact path under Canvas (adjust if your path differs)
-            BoostSlider = GameObject.Find("Canvas/BoostSlider")?.GetComponent<Slider>();
+            BoostText = GameObject.Find("Canvas/BoostText")?.GetComponent<TMP_Text>();
 
-            // 2) Fallback: object named exactly "BoostSlider"
-            if (BoostSlider == null)
-                BoostSlider = GameObject.Find("BoostSlider")?.GetComponent<Slider>();
+            if (BoostText == null)
+                BoostText = GameObject.Find("BoostText")?.GetComponent<TMP_Text>();
 
-            // 3) Optional: find via tag (set your UI object tag to "BoostSlider")
-            if (BoostSlider == null)
+            if (BoostText == null)
             {
                 GameObject byTag = null;
-                try { byTag = GameObject.FindGameObjectWithTag("BoostSlider"); } catch { /* tag may not exist */ }
-                if (byTag != null) BoostSlider = byTag.GetComponent<Slider>();
+                try { byTag = GameObject.FindGameObjectWithTag("BoostText"); } catch { }
+                if (byTag != null) BoostText = byTag.GetComponent<TMP_Text>();
             }
 
-            // 4) Last-resort: scan loaded Sliders and pick exact name
-            if (BoostSlider == null)
+            if (BoostText == null)
             {
-                var all = Resources.FindObjectsOfTypeAll<Slider>();
+                var all = Resources.FindObjectsOfTypeAll<TMP_Text>();
                 foreach (var s in all)
                 {
-                    if (s != null && s.name == "BoostSlider")
+                    if (s != null && s.name == "BoostText")
                     {
-                        BoostSlider = s;
+                        BoostText = s;
                         break;
                     }
                 }
             }
 
-            if (BoostSlider == null)
-                Debug.LogWarning("[Car] BoostSlider not found. Assign in Inspector, name it 'BoostSlider', place it at 'Canvas/BoostSlider', or tag it 'BoostSlider'.");
+            if (BoostText == null)
+                Debug.LogWarning("[Car] BoostText not found. Assign in Inspector, name it 'BoostText', place it at 'Canvas/BoostText', or tag it 'BoostText'.");
         }
-
-        // Initialize slider range and direction
-        if (BoostSlider != null)
-        {
-            BoostSlider.minValue = 0f;
-            BoostSlider.maxValue = maxHeat;
-            BoostSlider.wholeNumbers = false;
-            BoostSlider.direction = Slider.Direction.LeftToRight; // horizontal fill left-to-right
-            BoostSlider.value = heat;
-        }
+        if (BoostText != null)
+            UpdateBoostText();
     }
 
     bool unstuckInProgress = false;
@@ -166,13 +153,9 @@ public class Car : MonoBehaviour
             }
         }
 
-        // Update UI slider with current heat
-        if (BoostSlider != null)
+        if (BoostText != null)
         {
-            // Keep slider in sync with possible maxHeat changes
-            if (!Mathf.Approximately(BoostSlider.maxValue, maxHeat))
-                BoostSlider.maxValue = maxHeat;
-            BoostSlider.value = heat;
+            UpdateBoostText();
         }
 
         if (moveAction != null)
@@ -202,6 +185,14 @@ public class Car : MonoBehaviour
         {
             StartCoroutine(SmoothUnstuck());
         }
+    }
+
+    void UpdateBoostText()
+    {
+        if (BoostText == null) return;
+        int current = Mathf.RoundToInt(heat);
+        int max = Mathf.RoundToInt(maxHeat);
+        BoostText.text = $"Boost: {current}/{max}";
     }
 
     System.Collections.IEnumerator SmoothUnstuck()

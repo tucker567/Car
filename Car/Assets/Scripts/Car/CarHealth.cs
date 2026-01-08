@@ -20,7 +20,9 @@ public class CarHealth : MonoBehaviour
     public GameObject endScreenUI; // Assign in Inspector if needed
     [Tooltip("Tag used to find End Screen UI when not assigned")] public string endScreenTag = "EndScreenUI";
     public float UIscreenDelay = 3f; // Delay before showing end screen
-    public string MarkersName = "WayPoint - Image 1(Clone)"; // Name of the parent object containing markers
+    [Tooltip("Tag used to find waypoint/marker UI objects to disable when the player dies. Leave empty to use name fallback.")]
+    [SerializeField] string markersTag = ""; // Assign in Inspector; tag-based approach preferred
+    public string MarkersName = "WayPoint - Image 1(Clone)"; // Legacy: name-based fallback for marker object
 
     public float currentHealth;
     List<Rigidbody> parts = new List<Rigidbody>();
@@ -212,13 +214,51 @@ public class CarHealth : MonoBehaviour
 
         }
 
-        // Disable the specific waypoint UI if present
-        if (isPlayerCar && !string.IsNullOrEmpty(MarkersName))
+        // Disable waypoint/marker UI using tag (preferred), with name fallback for legacy setups
+        if (isPlayerCar)
         {
-            var waypoint = GameObject.Find(MarkersName);
-            if (waypoint != null)
+            bool disabledAnyByTag = false;
+            if (!string.IsNullOrEmpty(markersTag))
             {
-                waypoint.SetActive(false);
+                GameObject[] taggedMarkers = System.Array.Empty<GameObject>();
+                try { taggedMarkers = GameObject.FindGameObjectsWithTag(markersTag); } catch { }
+                if (taggedMarkers != null && taggedMarkers.Length > 0)
+                {
+                    foreach (var m in taggedMarkers)
+                    {
+                        if (m != null) m.SetActive(false);
+                    }
+                    disabledAnyByTag = taggedMarkers.Length > 0;
+                }
+
+                // Also attempt to catch inactive objects in editor/resources (optional safety)
+                if (!disabledAnyByTag)
+                {
+                    var all = Resources.FindObjectsOfTypeAll<GameObject>();
+                    int count = 0;
+                    foreach (var go in all)
+                    {
+                        if (go == null) continue;
+                        bool matches = false;
+                        try { matches = go.CompareTag(markersTag); } catch { matches = false; }
+                        if (matches)
+                        {
+                            go.SetActive(false);
+                            count++;
+                        }
+                    }
+                    disabledAnyByTag = count > 0;
+                }
+            }
+
+            // Legacy name-based fallback
+            if (!disabledAnyByTag && !string.IsNullOrEmpty(MarkersName))
+            {
+                var waypoint = GameObject.Find(MarkersName);
+                if (waypoint != null)
+                {
+                    waypoint.SetActive(false);
+                }
             }
         }
     }

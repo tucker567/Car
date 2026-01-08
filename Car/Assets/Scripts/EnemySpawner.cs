@@ -18,7 +18,6 @@ public class Spawner : MonoBehaviour
      public float heightOffset = 10f; // Spawn above player to avoid dunes
      public int carsPerWave = 1; // How many cars per interval
      public int Carsactive;
-     public TMPro.TextMeshProUGUI carscounter;
 
      void Update()
      {
@@ -71,8 +70,6 @@ public class Spawner : MonoBehaviour
                 var rotation = lookDir.sqrMagnitude > 0.01f ? Quaternion.LookRotation(lookDir.normalized) : Quaternion.identity;
 
                 Instantiate(AiCarPrefab, spawnPos, rotation);
-                Carsactive++;
-                carscounter.text = "Cars Active: " + Carsactive;
             }
             return;
         }

@@ -269,6 +269,8 @@ MonoBehaviour:
   endScreenUI: {fileID: 0}
   endScreenTag: EndScreenUI - Panel
   UIscreenDelay: 3
+  markersTag: WayPoint1
+  MarkersName: WayPoint - Image 1(Clone)
   currentHealth: 0
 --- !u!114 &4405057869381150677
 MonoBehaviour:

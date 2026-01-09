@@ -156,6 +156,7 @@ MonoBehaviour:
   audioSource: {fileID: 1142471013895667572}
   playlists:
   - albumName: 2000's Retro Racing
+    audioSourceName: CD
     songs:
     - {fileID: 8300000, guid: 249454b2bbac8e34394506f27117308e, type: 3}
     - {fileID: 8300000, guid: f3a2ba4f240ac8847b653e1a025cb62b, type: 3}
@@ -168,6 +169,7 @@ MonoBehaviour:
     - {fileID: 8300000, guid: 4bc6d2e918506494cb8c1bb94b886ef2, type: 3}
     - {fileID: 8300000, guid: db1aeca6a277b2f4a8a5fc149fcad1c7, type: 3}
   - albumName: Broken Parts
+    audioSourceName: CD
     songs:
     - {fileID: 8300000, guid: 0de4b8b6ff7a52e49b1339d334b5835f, type: 3}
     - {fileID: 8300000, guid: 062c487c253753743ad6a514dafa32bc, type: 3}
@@ -205,6 +207,7 @@ MonoBehaviour:
     - {fileID: 8300000, guid: c8739d8a47ba68746b1b9c5f6de25864, type: 3}
     - {fileID: 8300000, guid: 507be3587e937ef4588cf02067be0fad, type: 3}
   - albumName: DOS-88
+    audioSourceName: CD
     songs:
     - {fileID: 8300000, guid: 3f5e463582544e04ba2358a18892c451, type: 3}
     - {fileID: 8300000, guid: 210b95baeb2708b47a1e02f9ae954ee5, type: 3}
@@ -215,6 +218,7 @@ MonoBehaviour:
     - {fileID: 8300000, guid: ee6964794c155d249a643e680aaeb27a, type: 3}
     - {fileID: 8300000, guid: d2b961ffb34f1ef4797a9f14313ef0e4, type: 3}
   - albumName: NotJam
+    audioSourceName: CD
     songs:
     - {fileID: 8300000, guid: c3845d65fbe82664eb773ca12c08ea33, type: 3}
     - {fileID: 8300000, guid: f7a2a52ee669a454c8d35e5f9365ab5a, type: 3}
@@ -237,9 +241,26 @@ MonoBehaviour:
     - {fileID: 8300000, guid: 9966005a13a70784aad1bb257e58aa1a, type: 3}
     - {fileID: 8300000, guid: b64db615932a94c4cac4de9bc7abf3ac, type: 3}
     - {fileID: 8300000, guid: cfe5f115af71d8c41a15fad83e06795c, type: 3}
+  - albumName: House Music
+    audioSourceName: FM
+    songs:
+    - {fileID: 8300000, guid: 30dd89785f51aba41b723a36cba09f8c, type: 3}
+    - {fileID: 8300000, guid: f932175d76e093e4dac3d95ec7d68b29, type: 3}
+    - {fileID: 8300000, guid: 7c5dbb3d9ec390648aa8f3fc19fe78d3, type: 3}
+    - {fileID: 8300000, guid: 8dea047ba7e9af2478faf64adf8797d8, type: 3}
+    - {fileID: 8300000, guid: bc3be77b6da20e548b0aa7e0e7066b14, type: 3}
+    - {fileID: 8300000, guid: bb5f2816cd8b38143a4f794e0edbbf64, type: 3}
+    - {fileID: 8300000, guid: b9b6574843cd6ee4abfcd3300424fa99, type: 3}
+    - {fileID: 8300000, guid: 4927fbfb8de532d4f90cf077c4d19448, type: 3}
+    - {fileID: 8300000, guid: 53438c3bd0fb0394c883dd3a93adbd24, type: 3}
+    - {fileID: 8300000, guid: 3620114d940ad4641b91228163babb09, type: 3}
+    - {fileID: 8300000, guid: 8f80de2fe5d48be419bd6298ff98644c, type: 3}
+    - {fileID: 8300000, guid: 9e8ca3768f6122b47b5c8d2d7e0c81ef, type: 3}
+    - {fileID: 8300000, guid: c407d8c9cec9f734d8657afb92b2c212, type: 3}
   volume: 0.9
   albumText: {fileID: 0}
   songText: {fileID: 0}
+  audiosourceText: {fileID: 0}
 --- !u!114 &2158990106885286005
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -267,6 +288,8 @@ MonoBehaviour:
   endScreenUI: {fileID: 0}
   endScreenTag: EndScreenUI - Panel
   UIscreenDelay: 3
+  markersTag: 
+  MarkersName: WayPoint - Image 1(Clone)
   currentHealth: 0
 --- !u!114 &4405057869381150677
 MonoBehaviour:

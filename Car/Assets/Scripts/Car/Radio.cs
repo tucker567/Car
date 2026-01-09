@@ -7,6 +7,7 @@ using TMPro;
 public class Playlist
 {
     public string albumName;
+    public string audioSourceName;
     public List<AudioClip> songs;
 }
 
@@ -21,6 +22,7 @@ public class Radio : MonoBehaviour
     [Header("UI")]
     public TMP_Text albumText;
     public TMP_Text songText;
+    public TMP_Text audiosourceText;
 
     private int currentPlaylist = 0;
     private int currentSong = 0;
@@ -69,6 +71,26 @@ public class Radio : MonoBehaviour
             if (songText == null)
                 Debug.LogWarning("[Radio] songText not found. Assign, name, or tag it 'SongText'.");
         }
+
+        // audioSourceText
+        if (audiosourceText == null)
+        {
+            audiosourceText = GameObject.Find("Canvas/AudioSourceText")?.GetComponent<TMP_Text>();
+            if (audiosourceText == null) audiosourceText = GameObject.Find("AudioSourceText")?.GetComponent<TMP_Text>();
+            if (audiosourceText == null)
+            {
+                GameObject byTag = null;
+                try { byTag = GameObject.FindGameObjectWithTag("AudioSourceText"); } catch { }
+                if (byTag != null) audiosourceText = byTag.GetComponent<TMP_Text>();
+            }
+            if (audiosourceText == null)
+            {
+                var all = Resources.FindObjectsOfTypeAll<TMP_Text>();
+                foreach (var t in all) { if (t != null && t.name == "AudioSourceText") { audiosourceText = t; break; } }
+            }
+            if (audiosourceText == null)
+                Debug.LogWarning("[Radio] audiosourceText not found. Assign, name, or tag it 'AudioSourceText'.");
+        }
     }
 
     void Start()
@@ -116,6 +138,15 @@ public class Radio : MonoBehaviour
             TogglePlayPause();
         if (Keyboard.current.downArrowKey.wasPressedThisFrame)
             NextPlaylist();
+        
+        // Update audiosourceText
+        if (audiosourceText != null)
+        {
+            if (playlists.Count > 0)
+                audiosourceText.text = playlists[currentPlaylist].audioSourceName;
+            else
+                audiosourceText.text = "";
+        }
     }
 
     void ShuffleSongs()

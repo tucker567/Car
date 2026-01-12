@@ -50,6 +50,8 @@ public class Score : MonoBehaviour
     // Count-up coroutine handle
     private Coroutine _countUpCoroutine;
 
+    public GameObject tutorialpanel;
+
 
     void Start()
     {
@@ -357,6 +359,18 @@ public class Score : MonoBehaviour
         if (highScoreText != null)
         {
             highScoreText.text = "High Score: " + highScore.ToString();
+        }
+    }
+
+    public void TutorialPanel()
+    {
+        if (tutorialpanel != null && tutorialpanel.activeSelf == false)
+        {
+            tutorialpanel.SetActive(true);
+        }
+        else if (tutorialpanel != null && tutorialpanel.activeSelf == true)
+        {
+            tutorialpanel.SetActive(false);
         }
     }
 }

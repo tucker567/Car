@@ -23,6 +23,7 @@ public class CarHealth : MonoBehaviour
     [Tooltip("Tag used to find waypoint/marker UI objects to disable when the player dies. Leave empty to use name fallback.")]
     [SerializeField] string markersTag = ""; // Assign in Inspector; tag-based approach preferred
     public string MarkersName = "WayPoint - Image 1(Clone)"; // Legacy: name-based fallback for marker object
+    public List<AudioSource> crashSound = new List<AudioSource>(); // Assign in Inspector for crash sound effect
 
     public float currentHealth;
     List<Rigidbody> parts = new List<Rigidbody>();
@@ -129,6 +130,18 @@ public class CarHealth : MonoBehaviour
         UpdateHealthUI();
         if (currentHealth <= 0)
             FallApart();
+
+        // Play all crash sound at onceif assigned
+        if (crashSound != null)
+        {
+            foreach (var sound in crashSound)
+            {
+                if (sound != null)
+                {
+                    sound.Play();
+                }
+            }
+        }
     }
 
     void FallApart()

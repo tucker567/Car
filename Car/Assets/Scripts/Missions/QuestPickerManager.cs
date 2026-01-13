@@ -65,7 +65,7 @@ public class QuestPickerManager : MonoBehaviour
 
     [Header("Scoring")]
     [Tooltip("Points awarded to the player when a quest is completed successfully.")]
-    public int questCompletionScore = 500;
+    public int questCompletionScore = 1000;
     [Tooltip("If true, show the reward amount in the active quest text on completion.")]
     public bool showRewardOnCompleteText = true;
 
@@ -433,7 +433,7 @@ public class QuestPickerManager : MonoBehaviour
                 score.AddQuestBonus(questCompletionScore);
                 if (showRewardOnCompleteText && activeQuestText != null)
                 {
-                    activeQuestText.text = $"Quest complete! +{questCompletionScore}";
+                    activeQuestText.text = $"Quest complete! +{questCompletionScore}pts";
                 }
             }
             else if (activeQuestText != null)

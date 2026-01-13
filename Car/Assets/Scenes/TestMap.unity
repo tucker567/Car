@@ -260,17 +260,21 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: '- Drive with wasd
+  m_text: '- Drive with WASD
 
     - Boost with Shift
 
-    - avoid other cars
+    - Space to break
 
     -
-    go to cell towers to get a quest
+    avoid other cars
 
-    - survive and compleate quests to gain
-    points'
+    - go to cell towers to get a quest
+
+    - survive and
+    complete quests to gain points
+
+    - control the radio with the arrows'
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: ca07575be6bc6bc489ccc9367f96b604, type: 2}
   m_sharedMaterial: {fileID: 6660398306497762537, guid: ca07575be6bc6bc489ccc9367f96b604, type: 2}
@@ -484,17 +488,17 @@ RectTransform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 92030803}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 0.14285713, y: 0.14285713, z: 0.14285713}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 40058740}
-  m_Father: {fileID: 1757366300}
+  m_Father: {fileID: 210538568}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -540, y: 0}
+  m_AnchoredPosition: {x: 20.714233, y: -42.757137}
   m_SizeDelta: {x: 400, y: 450}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &103237401
@@ -2065,19 +2069,19 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 279568491784269283, guid: 27bee5f54bc828a4e8b10e07be6149a1, type: 3}
       propertyPath: m_AnchorMax.x
-      value: 0.5
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 279568491784269283, guid: 27bee5f54bc828a4e8b10e07be6149a1, type: 3}
       propertyPath: m_AnchorMax.y
-      value: 0.5
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 279568491784269283, guid: 27bee5f54bc828a4e8b10e07be6149a1, type: 3}
       propertyPath: m_AnchorMin.x
-      value: 0.5
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 279568491784269283, guid: 27bee5f54bc828a4e8b10e07be6149a1, type: 3}
       propertyPath: m_AnchorMin.y
-      value: 0.5
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 279568491784269283, guid: 27bee5f54bc828a4e8b10e07be6149a1, type: 3}
       propertyPath: m_SizeDelta.x
@@ -2129,11 +2133,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 279568491784269283, guid: 27bee5f54bc828a4e8b10e07be6149a1, type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: -685
+      value: 107
       objectReference: {fileID: 0}
     - target: {fileID: 279568491784269283, guid: 27bee5f54bc828a4e8b10e07be6149a1, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: 299.3
+      value: -145.70001
       objectReference: {fileID: 0}
     - target: {fileID: 279568491784269283, guid: 27bee5f54bc828a4e8b10e07be6149a1, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -2189,7 +2193,13 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
-    m_AddedGameObjects: []
+    m_AddedGameObjects:
+    - targetCorrespondingSourceObject: {fileID: 279568491784269283, guid: 27bee5f54bc828a4e8b10e07be6149a1, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 92030806}
+    - targetCorrespondingSourceObject: {fileID: 279568491784269283, guid: 27bee5f54bc828a4e8b10e07be6149a1, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1567827745}
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 27bee5f54bc828a4e8b10e07be6149a1, type: 3}
 --- !u!224 &491426698 stripped
@@ -2709,7 +2719,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: The Tofu 2006 is a good well rounded car, perfect for drifting.
+  m_text: The Tofu 2006 is a good well well-rounded car, perfect for drifting.
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: ca07575be6bc6bc489ccc9367f96b604, type: 2}
   m_sharedMaterial: {fileID: 6660398306497762537, guid: ca07575be6bc6bc489ccc9367f96b604, type: 2}
@@ -8110,16 +8120,21 @@ MonoBehaviour:
   - displayName: Tofu 2006
     prefab: {fileID: 521852092362769078, guid: 4b611481bec5e464b9d5dcacda7cee35, type: 3}
     icon: {fileID: 21300000, guid: 1bc9b3bb5e0210643b537a49c8f97d14, type: 3}
-    description: The Tofu 2006 is a good well rounded car, perfect for drifting.
+    description: The Tofu 2006 is a good well well-rounded car, perfect for drifting.
   - displayName: Beatall Ball
     prefab: {fileID: 521852092362769078, guid: e7da79183d415054794fe72d698a3c87, type: 3}
     icon: {fileID: 21300000, guid: 40e5312b8903295489e88483dcf4da6e, type: 3}
-    description: The Beatall Ball is ligtwheght, overheats and has little health,
-      but its fast.
+    description: The Beatall Ball is lightweight, overheats and has little health,
+      but it's fast.
   - displayName: Toyoyo
     prefab: {fileID: 521852092362769078, guid: 1107e07deb09d5348834ef761d584242, type: 3}
     icon: {fileID: 21300000, guid: a0e8a9f26eb19c14cbc68fb31f91cba3, type: 3}
-    description: its Slow but the Toyoyo is cool and is a vary durable car.
+    description: It's Slow, but the Toyoyo runs cool and is a very durable car.
+  - displayName: Landyroamer
+    prefab: {fileID: 521852092362769078, guid: 6361249985ad5c240a56a01c2664abc6, type: 3}
+    icon: {fileID: -338648088, guid: 03b1f4023fc49514fa0b5323ff2e5244, type: 3}
+    description: The Landyroamer is a well-rounded car, often used for long trips
+      across the wasteland.
   selectedIndex: 0
   carNameText: {fileID: 1474050219}
   carNameObjectName: CarNameText
@@ -11763,17 +11778,17 @@ RectTransform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1567827744}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 0.14285713, y: 0.14285713, z: 0.14285713}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 666860752}
-  m_Father: {fileID: 1757366300}
+  m_Father: {fileID: 210538568}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -477, y: 300}
+  m_AnchoredPosition: {x: 29.714264, y: 0.1000061}
   m_SizeDelta: {x: 275, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1567827746
@@ -12438,14 +12453,12 @@ RectTransform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 210538568}
   - {fileID: 1471859170}
   - {fileID: 491426698}
   - {fileID: 1206784736}
   - {fileID: 552912679}
   - {fileID: 103237404}
-  - {fileID: 92030806}
-  - {fileID: 1567827745}
+  - {fileID: 210538568}
   m_Father: {fileID: 242016653}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}

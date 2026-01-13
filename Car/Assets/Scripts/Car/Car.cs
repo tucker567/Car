@@ -28,6 +28,9 @@ public class Car : MonoBehaviour
     public float movingDrag = 0.05f; // Linear drag when moving
     public float centerOfMass = -0.5f;
 
+    [Header("Braking")]
+    public float brakeTorque = 3000f; // Brake strength applied when braking
+
     [Header("Drift & Friction Settings")]
     public float driftSteerMultiplier = 1.1f; // How much to increase steering when drifting
     public float minRearFriction = 0.7f; // Friction at max speed
@@ -48,6 +51,8 @@ public class Car : MonoBehaviour
     private PlayerInput playerInput;
     private InputAction moveAction;
     private InputAction unstuckAction;
+    private InputAction brakeAction;
+    private bool braking = false;
 
     [Header("Health System")]
     public CarHealth carHealth; // Assign in Inspector or GetComponent
@@ -64,6 +69,7 @@ public class Car : MonoBehaviour
         {
             moveAction = playerInput.actions["Move"];
             unstuckAction = playerInput.actions.FindAction("Unstuck");
+            brakeAction = playerInput.actions.FindAction("Brake");
         }
         // Add this to auto-find CarHealth if not assigned
         if (carHealth == null)
@@ -116,6 +122,17 @@ public class Car : MonoBehaviour
         {
             // Allow boosting if not overheated and heat is below maxHeat
             boosting = Keyboard.current.leftShiftKey.isPressed && !overheated && heat < maxHeat;
+        }
+
+        // Brake input (Space bar or Input System "Brake")
+        if (brakeAction != null)
+        {
+            // Treat as a held button; true while pressed
+            braking = brakeAction.IsPressed();
+        }
+        else if (Keyboard.current != null)
+        {
+            braking = Keyboard.current.spaceKey.isPressed;
         }
 
         // Heat logic
@@ -248,11 +265,21 @@ public class Car : MonoBehaviour
         }
     float speedMultiplier = (overheated ? overheatSlowMultiplier : 1f);
     float motor = verticalInput * drivespeed * speedMultiplier;
+    // If braking, cut motor torque so brakes take effect cleanly
+    if (braking)
+        motor = 0f;
 
         wheel1.motorTorque = motor;
         wheel2.motorTorque = motor;
         wheel3.motorTorque = motor;
         wheel4.motorTorque = motor;
+
+        // Apply brake torque when braking; otherwise release brakes
+        float brake = braking ? brakeTorque : 0f;
+        wheel1.brakeTorque = brake;
+        wheel2.brakeTorque = brake;
+        wheel3.brakeTorque = brake;
+        wheel4.brakeTorque = brake;
 
         // Slow down when no input
         if (Mathf.Abs(verticalInput) < 0.01f)

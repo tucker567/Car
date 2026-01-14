@@ -26,6 +26,7 @@ public class CarHealth : MonoBehaviour
     public List<AudioSource> crashSound = new List<AudioSource>(); // Assign in Inspector for crash sound effect
 
     public float currentHealth;
+    public GameObject explosionEffect;
     List<Rigidbody> parts = new List<Rigidbody>();
     bool destroyed = false;
 
@@ -273,6 +274,12 @@ public class CarHealth : MonoBehaviour
                     waypoint.SetActive(false);
                 }
             }
+        }
+
+        // Instantiate explosion effect if assigned
+        if (explosionEffect != null)
+        {
+            Instantiate(explosionEffect, transform.position, Quaternion.identity);
         }
     }
 

@@ -193,7 +193,9 @@ MonoBehaviour:
   UIscreenDelay: 3
   markersTag: 
   MarkersName: WayPoint - Image 1(Clone)
+  crashSound: []
   currentHealth: 0
+  explosionEffect: {fileID: 6243392535980242720, guid: f485a5952ac954c43ad56cab1f893315, type: 3}
 --- !u!82 &2510191410239446943
 AudioSource:
   m_ObjectHideFlags: 0

@@ -12,6 +12,10 @@ public class QuestPickerManager : MonoBehaviour
     public bool autoDiscover = true;                 // Enable runtime scan for new towers
     public string towerTag = "CellTower";            // Tag used by tower prefabs
     public float refreshInterval = 2f;               // Seconds between discovery scans
+    [Tooltip("If true, manager will keep trying to find the player by tag at runtime.")] public bool autoFindPlayer = true;
+    [Tooltip("Tag used to locate player if not assigned.")] public string playerTag = "playerCar";
+    [Tooltip("Seconds between player search attempts.")] public float playerSearchInterval = 0.5f;
+    public GameObject playerObject;                    // Optional direct reference to player object
     // Note: Only active objects are discovered; inactive are ignored.
     [Tooltip("If true, use distance-to-center checks instead of collider overlap.")]
     public bool useDistanceCheck = true;
@@ -83,6 +87,8 @@ public class QuestPickerManager : MonoBehaviour
     [Header("Debug")]
     public bool debugLogs = false;
     private bool _wasInsideAny = false;
+    private bool _playerSearchStarted = false; // Initialize the player search flag
+    private float _nextPlayerSearchTime = 0f; // Initialize the variable to track the next player search time
 
     void Awake()
     {
@@ -115,10 +121,34 @@ public class QuestPickerManager : MonoBehaviour
         if (triggerAreas.Count == 0)
             return;
 
-        GameObject player = GameObject.FindGameObjectWithTag("playerCar");
-        if (player == null) return;
+        if (_player == null && autoFindPlayer)
+        {
+            if (!_playerSearchStarted)
+            {
+                _playerSearchStarted = true;
+                _nextPlayerSearchTime = Time.time; // Search immediately on the first frame
+            }
+            if (Time.time >= _nextPlayerSearchTime)
+            {
+                var tagged = GameObject.FindGameObjectWithTag(playerTag);
+                if (tagged != null)
+                {
+                    _player = tagged;
+                    Debug.Log($"QuestPickerManager: Player found and assigned: {_player.name}");
+                    // asine playerObject reference if not already set
+                    if (playerObject == null)   
+                        playerObject = _player;
+                }
+                else if (debugLogs)
+                {
+                    Debug.LogWarning($"QuestPickerManager: Player with tag '{playerTag}' not found. Retrying in {playerSearchInterval} seconds.");
+                }
+                _nextPlayerSearchTime = Time.time + Mathf.Max(0.05f, playerSearchInterval);
+            }
+        }
 
-        _player = player;
+        if (_player == null)
+            return;
 
         bool insideAny = false;
         // Clean out any destroyed colliders while checking distance/containment
@@ -422,8 +452,69 @@ public class QuestPickerManager : MonoBehaviour
             activeQuestText.text = msg;
     }
 
+    private Coroutine _showCompletionRoutine;
+    private IEnumerator ShowQuestCompletionMessages(bool success)
+    {
+        if (success)
+        {
+            // Display quest complete message
+            if (activeQuestText != null)
+            {
+                activeQuestText.text = $"Quest complete! +{questCompletionScore}pts";
+            }
+
+            // Wait for a short delay
+            yield return new WaitForSeconds(2f);
+
+            // Display healing message
+            if (activeQuestText != null)
+            {
+                activeQuestText.text = "You have been healed!";
+            }
+
+            // Heal the player
+            var playerHealth = _player != null ? _player.GetComponent<CarHealth>() : null;
+            if (playerHealth != null)
+            {
+                playerHealth.HealToFull();
+            }
+
+            // Wait for the configured delay before hiding the panel
+            yield return new WaitForSeconds(activePanelHideDelayAfterComplete);
+
+            if (panelQuestActive != null)
+            {
+                panelQuestActive.SetActive(false);
+            }
+        }
+        else
+        {
+            if (activeQuestText != null)
+            {
+                activeQuestText.text = "Quest failed.";
+            }
+
+            if (hidePanelOnFail && activePanelHideDelayAfterComplete > 0f)
+            {
+                yield return new WaitForSeconds(activePanelHideDelayAfterComplete);
+                if (panelQuestActive != null)
+                {
+                    panelQuestActive.SetActive(false);
+                }
+            }
+        }
+
+        _hidePanelRoutine = null;
+    }
+
     private void OnQuestCompleted(bool success)
     {
+        if (_hidePanelRoutine != null)
+        {
+            StopCoroutine(_hidePanelRoutine);
+            _hidePanelRoutine = null;
+        }
+
         if (success)
         {
             // Award score for successful quest completion
@@ -431,34 +522,11 @@ public class QuestPickerManager : MonoBehaviour
             if (score != null)
             {
                 score.AddQuestBonus(questCompletionScore);
-                if (showRewardOnCompleteText && activeQuestText != null)
-                {
-                    activeQuestText.text = $"Quest complete! +{questCompletionScore}pts";
-                }
-            }
-            else if (activeQuestText != null)
-            {
-                activeQuestText.text = "Quest complete!";
             }
         }
-        else
-        {
-            if (activeQuestText != null)
-                activeQuestText.text = "Quest failed.";
-        }
-        if (_hidePanelRoutine != null)
-        {
-            StopCoroutine(_hidePanelRoutine);
-            _hidePanelRoutine = null;
-        }
-        if (questCanvas != null && panelQuestActive != null)
-        {
-            bool shouldHide = success || (hidePanelOnFail && !success);
-            if (shouldHide && activePanelHideDelayAfterComplete > 0f)
-                _hidePanelRoutine = StartCoroutine(HideActivePanelAfterDelay(activePanelHideDelayAfterComplete));
-            else if (shouldHide && activePanelHideDelayAfterComplete <= 0f)
-                panelQuestActive.SetActive(false);
-        }
+
+        // Start the coroutine to show messages and hide the panel
+        _hidePanelRoutine = StartCoroutine(ShowQuestCompletionMessages(success));
     }
 
     private IEnumerator HideActivePanelAfterDelay(float delay)

@@ -267,14 +267,17 @@ MonoBehaviour:
     - Space to break
 
     -
-    avoid other cars
+    R to flip the car
+
+    - avoid other cars
 
     - go to cell towers to get a quest
 
-    - survive and
-    complete quests to gain points
+    -
+    survive and complete quests to gain points
 
-    - control the radio with the arrows'
+    - control the radio with the
+    arrows'
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: ca07575be6bc6bc489ccc9367f96b604, type: 2}
   m_sharedMaterial: {fileID: 6660398306497762537, guid: ca07575be6bc6bc489ccc9367f96b604, type: 2}
@@ -13539,6 +13542,10 @@ MonoBehaviour:
   autoDiscover: 1
   towerTag: CellTower
   refreshInterval: 2
+  autoFindPlayer: 1
+  playerTag: playerCar
+  playerSearchInterval: 0.5
+  playerObject: {fileID: 0}
   useDistanceCheck: 1
   range: 50
   preferColliderRadius: 0

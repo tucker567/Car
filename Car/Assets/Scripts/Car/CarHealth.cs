@@ -335,4 +335,11 @@ public class CarHealth : MonoBehaviour
             return;
         }
     }
+    public void HealToFull()
+    {
+        if (isPlayerCar == false) return;
+        if (destroyed) return;
+        currentHealth = maxHealth;
+        UpdateHealthUI();
+    }
 }

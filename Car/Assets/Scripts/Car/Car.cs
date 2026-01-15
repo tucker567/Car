@@ -203,25 +203,6 @@ public class Car : MonoBehaviour
             StartCoroutine(SmoothUnstuck());
         }
 
-        // if player gets glitched inside object, unstuck automatically
-        if (!unstuckInProgress && rigid.linearVelocity.magnitude < 0.1f)
-        {
-            bool stuck = false;
-            Collider[] colliders = Physics.OverlapBox(transform.position, transform.localScale / 2f, transform.rotation);
-            foreach (var col in colliders)
-            {
-                if (col.gameObject != this.gameObject && !col.isTrigger)
-                {
-                    stuck = true;
-                    break;
-                }
-            }
-            if (stuck)
-            {
-                StartCoroutine(SmoothUnstuck());
-            }
-        }
-
         // if player falls tharugh the ground to y < -3, unstuck automatically
         if (!unstuckInProgress && transform.position.y < -3f)
         {

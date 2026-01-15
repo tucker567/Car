@@ -24,6 +24,7 @@ public class CarHealth : MonoBehaviour
     [SerializeField] string markersTag = ""; // Assign in Inspector; tag-based approach preferred
     public string MarkersName = "WayPoint - Image 1(Clone)"; // Legacy: name-based fallback for marker object
     public List<AudioSource> crashSound = new List<AudioSource>(); // Assign in Inspector for crash sound effect
+    public AudioSource deathSound; // Assign in Inspector for death sound effect
 
     public float currentHealth;
     public GameObject explosionEffect;
@@ -280,6 +281,19 @@ public class CarHealth : MonoBehaviour
         if (explosionEffect != null)
         {
             Instantiate(explosionEffect, transform.position, Quaternion.identity);
+        }
+
+        // Play death sound if assigned
+        if (deathSound != null)
+        {
+            // delay death sound slightly to avoid cut-off
+            StartCoroutine(PlayDeathSoundWithDelay());
+
+            IEnumerator<WaitForSeconds> PlayDeathSoundWithDelay()
+            {
+                yield return new WaitForSeconds(1f);
+                deathSound.Play();
+            }
         }
     }
 

@@ -44,6 +44,10 @@ public class Car : MonoBehaviour
 
     public float engineVolume = 2f;      // Increase max and default value
 
+    [Header("Effects")]
+    public ParticleSystem leftBoostExhaust;
+    public ParticleSystem rightBoostExhaust;
+
     // Internal state
     float horizontalInput, verticalInput;
 
@@ -208,6 +212,9 @@ public class Car : MonoBehaviour
         {
             StartCoroutine(SmoothUnstuck());
         }
+
+        // Update boost exhaust effects
+        UpdateBoostEffects();
     }
 
     void UpdateBoostText()
@@ -330,6 +337,27 @@ public class Car : MonoBehaviour
             rigid.AddTorque(rollAxis * rollStrength);
         }
         // No timer or clamping, so the car can keep rolling naturally
+    }
+
+    void UpdateBoostEffects()
+    {
+        bool shouldPlay = boosting;
+
+        if (leftBoostExhaust != null)
+        {
+            if (shouldPlay && !leftBoostExhaust.isPlaying)
+                leftBoostExhaust.Play();
+            else if (!shouldPlay && leftBoostExhaust.isPlaying)
+                leftBoostExhaust.Stop();
+        }
+
+        if (rightBoostExhaust != null)
+        {
+            if (shouldPlay && !rightBoostExhaust.isPlaying)
+                rightBoostExhaust.Play();
+            else if (!shouldPlay && rightBoostExhaust.isPlaying)
+                rightBoostExhaust.Stop();
+        }
     }
 
     void SetWheelFriction(WheelCollider wheel, float friction)

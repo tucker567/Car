@@ -8135,9 +8135,13 @@ MonoBehaviour:
     description: It's Slow, but the Toyoyo runs cool and is a very durable car.
   - displayName: Landyroamer
     prefab: {fileID: 521852092362769078, guid: 6361249985ad5c240a56a01c2664abc6, type: 3}
-    icon: {fileID: -338648088, guid: 03b1f4023fc49514fa0b5323ff2e5244, type: 3}
+    icon: {fileID: 211007112, guid: abc668145d3cc4742a2c7824969f2399, type: 3}
     description: The Landyroamer is a well-rounded car, often used for long trips
       across the wasteland.
+  - displayName: Survinterior
+    prefab: {fileID: 521852092362769078, guid: ef97b6cf994722049a79b17bd0325f90, type: 3}
+    icon: {fileID: -1105405952, guid: 01f28ebdf64910e438b406acc8fcc124, type: 3}
+    description: its fast its red...
   selectedIndex: 0
   carNameText: {fileID: 1474050219}
   carNameObjectName: CarNameText

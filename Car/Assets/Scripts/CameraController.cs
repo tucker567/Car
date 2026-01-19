@@ -8,6 +8,9 @@ public class CameraController : MonoBehaviour
     public float smoothSpeed = 1f; // Smoothing factor for position
     public float orbitSmoothSpeed = 0.14f; // Smoothing factor for orbit angle
     public float orbitLag = 0.9f; // How much the camera lags behind the car's yaw (0 = instant, 1 = max lag)
+    [Header("Zoom Settings")]
+    public float shiftZoomMultiplier = 1.3f; // How far to zoom out when holding Shift
+    public float zoomSmoothSpeed = 5f; // How quickly the zoom blends
 
     private float currentYaw;
     private float targetYaw;
@@ -29,9 +32,25 @@ public class CameraController : MonoBehaviour
     public float YDefaultRotation;
     public float ZDefaultRotation;
 
+    private Vector3 currentOffset; // Smoothed offset (used for zooming)
+
     void LateUpdate()
     {
         if (target == null) return;
+
+        // Initialize currentOffset on first frame
+        if (currentOffset == Vector3.zero)
+        {
+            currentOffset = offset;
+        }
+
+        // Zoom logic: hold Shift to slightly zoom out
+        bool isShiftHeld = Keyboard.current != null &&
+                           ((Keyboard.current.leftShiftKey != null && Keyboard.current.leftShiftKey.isPressed) ||
+                            (Keyboard.current.rightShiftKey != null && Keyboard.current.rightShiftKey.isPressed));
+
+        Vector3 targetOffset = isShiftHeld ? offset * shiftZoomMultiplier : offset;
+        currentOffset = Vector3.Lerp(currentOffset, targetOffset, Time.deltaTime * zoomSmoothSpeed);
 
         // Mouse drag logic using new Input System
         if (Mouse.current.rightButton.wasPressedThisFrame)
@@ -80,7 +99,7 @@ public class CameraController : MonoBehaviour
 
         // Calculate the rotated offset based on the lagged yaw and pitch
         Quaternion orbitRotation = Quaternion.Euler(dragPitch, currentYaw, 0);
-        Vector3 desiredPosition = target.position + orbitRotation * offset;
+        Vector3 desiredPosition = target.position + orbitRotation * currentOffset;
         Vector3 smoothedPosition = Vector3.Lerp(transform.position, desiredPosition, smoothSpeed);
         transform.position = smoothedPosition;
 
